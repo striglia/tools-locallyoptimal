@@ -1,5 +1,7 @@
 # Tools Guide
 
+> **Inspiration & Credit**: This guide is directly inspired by [Simon Willison's TOOLS_GUIDE.md](https://github.com/simonw/tools/blob/main/TOOLS_GUIDE.md). If you're serious about building browser-based tools, **read Simon's guide first**—it's comprehensive, battle-tested across 200+ tools, and covers advanced patterns like WebAssembly, testing, and automation. This is a simplified version focused on getting started quickly.
+
 A simple guide for creating new tools for this repository.
 
 ## Philosophy
