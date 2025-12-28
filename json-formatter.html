@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Formatter - Locally Optimal Tools</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 13px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background: #0366d6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0256c7;
+        }
+        .error {
+            color: #d73a49;
+            margin: 10px 0;
+            padding: 10px;
+            background: #ffeef0;
+            border-radius: 4px;
+            display: none;
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #586069;
+        }
+        footer a {
+            color: #0366d6;
+        }
+    </style>
+</head>
+<body>
+    <h1>JSON Formatter</h1>
+    <p>Format and validate JSON with syntax highlighting</p>
+
+    <div class="controls">
+        <button onclick="formatJSON()">Format</button>
+        <button onclick="minifyJSON()">Minify</button>
+        <button onclick="clearInput()">Clear</button>
+    </div>
+
+    <div id="error" class="error"></div>
+
+    <textarea id="jsonInput" placeholder='Paste your JSON here, e.g. {"name":"value","nested":{"key":123}}'></textarea>
+
+    <footer>
+        <p><a href="index.html">← Back to tools</a></p>
+    </footer>
+
+    <script>
+        const input = document.getElementById('jsonInput');
+        const error = document.getElementById('error');
+
+        function showError(msg) {
+            error.textContent = msg;
+            error.style.display = 'block';
+        }
+
+        function hideError() {
+            error.style.display = 'none';
+        }
+
+        function formatJSON() {
+            hideError();
+            try {
+                const parsed = JSON.parse(input.value);
+                input.value = JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                showError('Invalid JSON: ' + e.message);
+            }
+        }
+
+        function minifyJSON() {
+            hideError();
+            try {
+                const parsed = JSON.parse(input.value);
+                input.value = JSON.stringify(parsed);
+            } catch (e) {
+                showError('Invalid JSON: ' + e.message);
+            }
+        }
+
+        function clearInput() {
+            input.value = '';
+            hideError();
+        }
+    </script>
+</body>
+</html>
