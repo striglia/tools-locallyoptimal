@@ -259,6 +259,11 @@
             <input type="number" id="inflationRate" value="5" min="0" max="15" step="0.1">
         </div>
         <div class="input-group">
+            <label for="taxRate">Investment Tax Rate (%) <small style="color: #6a737d;">- optional, for comparison</small></label>
+            <input type="number" id="taxRate" value="15" min="0" max="40" step="1">
+            <small style="color: #6a737d; font-size: 0.85em; display: block; margin-top: 4px;">Typical capital gains rate for comparison vs taxable account</small>
+        </div>
+        <div class="input-group">
             <label for="collegeAge">College Start Age</label>
             <input type="number" id="collegeAge" value="18" min="18" max="25" step="1">
         </div>
@@ -275,8 +280,9 @@
         <h2>Results</h2>
 
         <div class="projection">
-            <h3>Projected Balance at Age <span id="projectedAge"></span></h3>
+            <h3>Projected 529 Balance at Age <span id="projectedAge"></span></h3>
             <div class="amount" id="projectedBalance"></div>
+            <div id="taxSavings" style="margin-top: 15px; font-size: 0.9em; color: #28a745;"></div>
         </div>
 
         <div class="comparisons">
@@ -433,6 +439,7 @@
             const childAge = parseFloat(document.getElementById('childAge').value);
             const returnRate = parseFloat(document.getElementById('returnRate').value);
             const inflationRate = parseFloat(document.getElementById('inflationRate').value);
+            const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
             const collegeAge = parseFloat(document.getElementById('collegeAge').value);
 
             // Validate inputs
@@ -483,6 +490,25 @@
             // Display projected balance
             document.getElementById('projectedAge').textContent = collegeAge;
             document.getElementById('projectedBalance').textContent = formatCurrency(projectedBalance);
+
+            // Calculate and display tax savings (529 tax-free vs taxable account)
+            if (taxRate > 0) {
+                // Calculate what balance would be in taxable account (with tax drag on returns)
+                const afterTaxReturnRate = returnRate * (1 - taxRate / 100);
+                const taxableBalance = calculateFutureValue(
+                    currentBalance,
+                    monthlyContribution,
+                    afterTaxReturnRate,
+                    monthsUntilCollege
+                );
+                const taxSavings = projectedBalance - taxableBalance;
+
+                document.getElementById('taxSavings').innerHTML =
+                    `<strong>529 Tax Benefit:</strong> ${formatCurrency(taxSavings)} more than taxable account<br>` +
+                    `<small>(Taxable account with ${taxRate}% tax would have: ${formatCurrency(taxableBalance)})</small>`;
+            } else {
+                document.getElementById('taxSavings').innerHTML = '';
+            }
 
             // Update target amounts to show inflated costs
             document.getElementById('targetUC').textContent = '4 years at college: ' + formatCurrency(inflatedCosts.uc);
