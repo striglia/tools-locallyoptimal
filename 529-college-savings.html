@@ -201,6 +201,98 @@
             font-size: 0.85em;
             color: #586069;
         }
+        .tax-chart {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+        }
+        .tax-chart h4 {
+            margin: 0 0 15px 0;
+            font-size: 1em;
+            color: #24292e;
+        }
+        .chart-container {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            height: 200px;
+            padding: 10px 0;
+            border-bottom: 2px solid #333;
+        }
+        .year-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .bars {
+            width: 100%;
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 170px;
+        }
+        .bar {
+            flex: 1;
+            min-height: 2px;
+            border-radius: 2px 2px 0 0;
+            position: relative;
+            cursor: pointer;
+        }
+        .bar.taxable {
+            background: #959da5;
+        }
+        .bar.tax-free {
+            background: #28a745;
+        }
+        .bar:hover::after {
+            content: attr(data-value);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #24292e;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            white-space: nowrap;
+            margin-bottom: 4px;
+        }
+        .year-label {
+            font-size: 10px;
+            color: #586069;
+            margin-top: 4px;
+        }
+        .chart-legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+        }
+        .tax-savings-summary {
+            text-align: center;
+            margin-top: 15px;
+            padding: 12px;
+            background: #f6f8fa;
+            border-radius: 4px;
+            color: #28a745;
+            font-weight: 500;
+        }
         footer {
             margin-top: 30px;
             padding-top: 20px;
@@ -282,7 +374,22 @@
         <div class="projection">
             <h3>Projected 529 Balance at Age <span id="projectedAge"></span></h3>
             <div class="amount" id="projectedBalance"></div>
-            <div id="taxSavings" style="margin-top: 15px; font-size: 0.9em; color: #28a745;"></div>
+        </div>
+
+        <div id="taxChart" class="tax-chart" style="display: none;">
+            <h4>529 Tax-Free Growth Advantage (Year-by-Year)</h4>
+            <div class="chart-container" id="chartBars"></div>
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #28a745;"></div>
+                    <span>529 Plan (Tax-Free)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #959da5;"></div>
+                    <span>Taxable Account</span>
+                </div>
+            </div>
+            <div class="tax-savings-summary" id="taxSavingsSummary"></div>
         </div>
 
         <div class="comparisons">
@@ -493,21 +600,55 @@
 
             // Calculate and display tax savings (529 tax-free vs taxable account)
             if (taxRate > 0) {
-                // Calculate what balance would be in taxable account (with tax drag on returns)
                 const afterTaxReturnRate = returnRate * (1 - taxRate / 100);
-                const taxableBalance = calculateFutureValue(
-                    currentBalance,
-                    monthlyContribution,
-                    afterTaxReturnRate,
-                    monthsUntilCollege
-                );
-                const taxSavings = projectedBalance - taxableBalance;
 
-                document.getElementById('taxSavings').innerHTML =
-                    `<strong>529 Tax Benefit:</strong> ${formatCurrency(taxSavings)} more than taxable account<br>` +
-                    `<small>(Taxable account with ${taxRate}% tax would have: ${formatCurrency(taxableBalance)})</small>`;
+                // Calculate year-by-year balances for chart
+                const yearlyData = [];
+                const maxYears = Math.min(yearsUntilCollege, 20); // Cap at 20 years for chart clarity
+                const yearStep = yearsUntilCollege > 10 ? Math.ceil(yearsUntilCollege / 10) : 1;
+
+                for (let year = 0; year <= yearsUntilCollege; year += yearStep) {
+                    const months = year * 12;
+                    const balance529 = calculateFutureValue(currentBalance, monthlyContribution, returnRate, months);
+                    const balanceTaxable = calculateFutureValue(currentBalance, monthlyContribution, afterTaxReturnRate, months);
+                    yearlyData.push({ year, balance529, balanceTaxable });
+                }
+
+                // Find max value for scaling
+                const maxBalance = Math.max(...yearlyData.map(d => d.balance529));
+
+                // Generate chart HTML
+                let chartHTML = '';
+                yearlyData.forEach(data => {
+                    const height529 = (data.balance529 / maxBalance) * 100;
+                    const heightTaxable = (data.balanceTaxable / maxBalance) * 100;
+
+                    chartHTML += `
+                        <div class="year-group">
+                            <div class="bars">
+                                <div class="bar taxable" style="height: ${heightTaxable}%"
+                                     data-value="${formatCurrency(data.balanceTaxable)}"></div>
+                                <div class="bar tax-free" style="height: ${height529}%"
+                                     data-value="${formatCurrency(data.balance529)}"></div>
+                            </div>
+                            <div class="year-label">Yr ${data.year}</div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('chartBars').innerHTML = chartHTML;
+
+                // Calculate final tax savings
+                const finalTaxableBalance = yearlyData[yearlyData.length - 1].balanceTaxable;
+                const taxSavings = projectedBalance - finalTaxableBalance;
+
+                document.getElementById('taxSavingsSummary').innerHTML =
+                    `<strong>Total 529 Tax Benefit: ${formatCurrency(taxSavings)}</strong><br>` +
+                    `<small>529 saves you ${formatCurrency(taxSavings)} vs taxable account (${taxRate}% tax drag)</small>`;
+
+                document.getElementById('taxChart').style.display = 'block';
             } else {
-                document.getElementById('taxSavings').innerHTML = '';
+                document.getElementById('taxChart').style.display = 'none';
             }
 
             // Update target amounts to show inflated costs
