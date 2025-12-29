@@ -200,6 +200,10 @@
             <input type="number" id="returnRate" value="7" min="0" max="20" step="0.1">
         </div>
         <div class="input-group">
+            <label for="inflationRate">College Cost Inflation Rate (%)</label>
+            <input type="number" id="inflationRate" value="5" min="0" max="15" step="0.1">
+        </div>
+        <div class="input-group">
             <label for="collegeAge">College Start Age</label>
             <input type="number" id="collegeAge" value="18" min="18" max="25" step="1">
         </div>
@@ -223,18 +227,18 @@
         <div class="comparisons">
             <h3>Comparison to College Costs (4 years total)</h3>
             <div class="comparison-item">
-                <div class="college-type">UC System (~$35k/year)</div>
-                <div class="target-amount">Target: $140,000</div>
+                <div class="college-type">UC System (~$35k/year today)</div>
+                <div class="target-amount" id="targetUC">Target: $140,000</div>
                 <div class="status" id="statusUC"></div>
             </div>
             <div class="comparison-item">
-                <div class="college-type">Out-of-State Public (~$50k/year)</div>
-                <div class="target-amount">Target: $200,000</div>
+                <div class="college-type">Out-of-State Public (~$50k/year today)</div>
+                <div class="target-amount" id="targetOutOfState">Target: $200,000</div>
                 <div class="status" id="statusOutOfState"></div>
             </div>
             <div class="comparison-item">
-                <div class="college-type">Private California (~$85k/year)</div>
-                <div class="target-amount">Target: $340,000</div>
+                <div class="college-type">Private California (~$85k/year today)</div>
+                <div class="target-amount" id="targetPrivate">Target: $340,000</div>
                 <div class="status" id="statusPrivate"></div>
             </div>
         </div>
@@ -328,6 +332,11 @@
             return remaining / ((growthFactor - 1) / monthlyRate);
         }
 
+        function calculateInflatedCost(currentCost, inflationRate, years) {
+            // FV = PV × (1 + r)^n
+            return currentCost * Math.pow(1 + (inflationRate / 100), years);
+        }
+
         function calculate() {
             hideError();
 
@@ -336,10 +345,11 @@
             const monthlyContribution = parseFloat(document.getElementById('monthlyContribution').value) || 0;
             const childAge = parseFloat(document.getElementById('childAge').value);
             const returnRate = parseFloat(document.getElementById('returnRate').value);
+            const inflationRate = parseFloat(document.getElementById('inflationRate').value);
             const collegeAge = parseFloat(document.getElementById('collegeAge').value);
 
             // Validate inputs
-            if (isNaN(childAge) || isNaN(returnRate) || isNaN(collegeAge)) {
+            if (isNaN(childAge) || isNaN(returnRate) || isNaN(inflationRate) || isNaN(collegeAge)) {
                 showError('Please fill in all required fields');
                 return;
             }
@@ -359,6 +369,11 @@
                 return;
             }
 
+            if (inflationRate < 0 || inflationRate > 15) {
+                showError('Inflation rate should be between 0% and 15%');
+                return;
+            }
+
             // Calculate years and months until college
             const yearsUntilCollege = collegeAge - childAge;
             const monthsUntilCollege = yearsUntilCollege * 12;
@@ -371,14 +386,26 @@
                 monthsUntilCollege
             );
 
+            // Calculate inflated college costs
+            const inflatedCosts = {
+                uc: calculateInflatedCost(COLLEGE_COSTS.uc.total, inflationRate, yearsUntilCollege),
+                outOfState: calculateInflatedCost(COLLEGE_COSTS.outOfState.total, inflationRate, yearsUntilCollege),
+                private: calculateInflatedCost(COLLEGE_COSTS.private.total, inflationRate, yearsUntilCollege)
+            };
+
             // Display projected balance
             document.getElementById('projectedAge').textContent = collegeAge;
             document.getElementById('projectedBalance').textContent = formatCurrency(projectedBalance);
 
-            // Calculate and display status for each college type
-            const statusUC = getStatus(projectedBalance, COLLEGE_COSTS.uc.total);
-            const statusOutOfState = getStatus(projectedBalance, COLLEGE_COSTS.outOfState.total);
-            const statusPrivate = getStatus(projectedBalance, COLLEGE_COSTS.private.total);
+            // Update target amounts to show inflated costs
+            document.getElementById('targetUC').textContent = 'Target: ' + formatCurrency(inflatedCosts.uc);
+            document.getElementById('targetOutOfState').textContent = 'Target: ' + formatCurrency(inflatedCosts.outOfState);
+            document.getElementById('targetPrivate').textContent = 'Target: ' + formatCurrency(inflatedCosts.private);
+
+            // Calculate and display status for each college type (using inflated costs)
+            const statusUC = getStatus(projectedBalance, inflatedCosts.uc);
+            const statusOutOfState = getStatus(projectedBalance, inflatedCosts.outOfState);
+            const statusPrivate = getStatus(projectedBalance, inflatedCosts.private);
 
             const ucElement = document.getElementById('statusUC');
             ucElement.textContent = statusUC.text;
@@ -397,25 +424,25 @@
             let hasRecommendations = false;
             let recommendationsHTML = '<h3>Recommendations</h3>';
 
-            if (projectedBalance < COLLEGE_COSTS.uc.total) {
+            if (projectedBalance < inflatedCosts.uc) {
                 const requiredMonthly = calculateRequiredMonthly(
-                    COLLEGE_COSTS.uc.total,
+                    inflatedCosts.uc,
                     currentBalance,
                     returnRate,
                     monthsUntilCollege
                 );
-                recommendationsHTML += `<div class="recommendation-item">To reach UC System target (${formatCurrency(COLLEGE_COSTS.uc.total)}), you would need to contribute ${formatCurrency(requiredMonthly)}/month</div>`;
+                recommendationsHTML += `<div class="recommendation-item">To reach UC System target (${formatCurrency(inflatedCosts.uc)}), you would need to contribute ${formatCurrency(requiredMonthly)}/month</div>`;
                 hasRecommendations = true;
             }
 
-            if (projectedBalance < COLLEGE_COSTS.private.total && projectedBalance >= COLLEGE_COSTS.uc.total) {
+            if (projectedBalance < inflatedCosts.private && projectedBalance >= inflatedCosts.uc) {
                 const requiredMonthly = calculateRequiredMonthly(
-                    COLLEGE_COSTS.private.total,
+                    inflatedCosts.private,
                     currentBalance,
                     returnRate,
                     monthsUntilCollege
                 );
-                recommendationsHTML += `<div class="recommendation-item">To reach Private California target (${formatCurrency(COLLEGE_COSTS.private.total)}), you would need to contribute ${formatCurrency(requiredMonthly)}/month</div>`;
+                recommendationsHTML += `<div class="recommendation-item">To reach Private California target (${formatCurrency(inflatedCosts.private)}), you would need to contribute ${formatCurrency(requiredMonthly)}/month</div>`;
                 hasRecommendations = true;
             }
 
