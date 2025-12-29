@@ -115,6 +115,15 @@
             font-weight: 500;
             flex: 2;
         }
+        .college-type small {
+            color: #6a737d;
+            font-weight: normal;
+            font-size: 0.85em;
+        }
+        .college-type sup {
+            color: #0366d6;
+            font-weight: bold;
+        }
         .target-amount {
             flex: 1;
             text-align: right;
@@ -150,8 +159,53 @@
             margin: 10px 0;
             color: #856404;
         }
+        .citations {
+            margin-top: 50px;
+            padding: 25px;
+            background: #f6f8fa;
+            border-radius: 6px;
+            font-size: 0.9em;
+            line-height: 1.7;
+        }
+        .citations h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            color: #24292e;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 10px;
+        }
+        .citation-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .citation-item {
+            margin: 12px 0;
+            padding-left: 20px;
+            color: #586069;
+        }
+        .citation-item sup {
+            font-weight: bold;
+            color: #0366d6;
+        }
+        .citation-item a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        .citation-item a:hover {
+            text-decoration: underline;
+        }
+        .disclaimer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e1e4e8;
+            font-size: 0.85em;
+            color: #586069;
+        }
         footer {
-            margin-top: 60px;
+            margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid #eee;
             font-size: 0.9em;
@@ -227,23 +281,55 @@
         <div class="comparisons">
             <h3>Comparison to College Costs (4 years total)</h3>
             <div class="comparison-item">
-                <div class="college-type">UC System (~$35k/year today)</div>
+                <div class="college-type">
+                    <strong>UC System</strong> (~$35k/year today)<sup>[1]</sup><br>
+                    <small>Examples: UC Berkeley, UCLA</small>
+                </div>
                 <div class="target-amount" id="targetUC">Target: $140,000</div>
                 <div class="status" id="statusUC"></div>
             </div>
             <div class="comparison-item">
-                <div class="college-type">Out-of-State Public (~$50k/year today)</div>
+                <div class="college-type">
+                    <strong>Out-of-State Public</strong> (~$50k/year today)<sup>[2]</sup><br>
+                    <small>Examples: Univ. of Michigan, Univ. of Virginia</small>
+                </div>
                 <div class="target-amount" id="targetOutOfState">Target: $200,000</div>
                 <div class="status" id="statusOutOfState"></div>
             </div>
             <div class="comparison-item">
-                <div class="college-type">Private California (~$85k/year today)</div>
+                <div class="college-type">
+                    <strong>Private California</strong> (~$85k/year today)<sup>[3]</sup><br>
+                    <small>Examples: Stanford, USC</small>
+                </div>
                 <div class="target-amount" id="targetPrivate">Target: $340,000</div>
                 <div class="status" id="statusPrivate"></div>
             </div>
         </div>
 
         <div id="recommendations" class="recommendations" style="display: none;"></div>
+    </div>
+
+    <div class="citations">
+        <h3>Notes & Citations</h3>
+        <p class="citation-note"><strong>College Cost Inflation (5% default):</strong> Historically, college costs have increased at approximately 5-6% annually, roughly double the general inflation rate. From 2000-2020, average college costs increased 169% while general inflation was only 53%.<sup>[4]</sup> This trend has moderated slightly in recent years but remains significantly above general inflation.</p>
+
+        <div class="citation-item">
+            <sup>[1]</sup> <strong>UC System (2024-25):</strong> Total cost of attendance (tuition, room & board, fees, books) for California residents is approximately $36,000/year at UC Berkeley and UCLA. Source: <a href="https://admission.universityofcalifornia.edu/tuition-financial-aid/tuition-cost-of-attendance/" target="_blank">UC Office of the President</a>, 2024-25 Cost of Attendance.
+        </div>
+
+        <div class="citation-item">
+            <sup>[2]</sup> <strong>Out-of-State Public (2024-25):</strong> Total cost of attendance for out-of-state students ranges from $48,000-54,000/year. University of Michigan: ~$54,000/year; University of Virginia: ~$50,000/year. Sources: Individual university financial aid offices, 2024-25 academic year.
+        </div>
+
+        <div class="citation-item">
+            <sup>[3]</sup> <strong>Private California (2024-25):</strong> Total cost of attendance at private universities ranges from $80,000-90,000/year. Stanford University: ~$87,000/year; USC: ~$85,000/year. Sources: Stanford Financial Aid Office, USC Financial Aid Office, 2024-25 academic year.
+        </div>
+
+        <div class="citation-item">
+            <sup>[4]</sup> <strong>College Cost Inflation Data:</strong> College Board, "Trends in College Pricing and Student Aid" (annual reports 2000-2024); Georgetown University Center on Education and the Workforce, "The College Payoff" (2021); National Center for Education Statistics (NCES) Digest of Education Statistics.
+        </div>
+
+        <p class="disclaimer"><em>Note: All costs are estimates for planning purposes. Actual costs vary by institution, residency status, and individual circumstances. These figures represent total cost of attendance including tuition, fees, room, board, books, and personal expenses. Financial aid and scholarships can significantly reduce out-of-pocket costs.</em></p>
     </div>
 
     <footer>
