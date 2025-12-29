@@ -279,26 +279,26 @@
             <h3>Comparison to College Costs (4 years total)</h3>
             <div class="comparison-item">
                 <div class="college-type">
-                    <strong>UC System</strong> (~$35k/year today)<sup>[1]</sup><br>
+                    <strong>UC System</strong><sup>[1]</sup><br>
                     <small>Examples: UC Berkeley, UCLA</small>
                 </div>
-                <div class="target-amount" id="targetUC">Target: $140,000</div>
+                <div class="target-amount" id="targetUC">4 years today: $140,000</div>
                 <div class="status" id="statusUC"></div>
             </div>
             <div class="comparison-item">
                 <div class="college-type">
-                    <strong>Out-of-State Public</strong> (~$50k/year today)<sup>[2]</sup><br>
+                    <strong>Out-of-State Public</strong><sup>[2]</sup><br>
                     <small>Examples: Univ. of Michigan, Univ. of Virginia</small>
                 </div>
-                <div class="target-amount" id="targetOutOfState">Target: $200,000</div>
+                <div class="target-amount" id="targetOutOfState">4 years today: $200,000</div>
                 <div class="status" id="statusOutOfState"></div>
             </div>
             <div class="comparison-item">
                 <div class="college-type">
-                    <strong>Private California</strong> (~$85k/year today)<sup>[3]</sup><br>
+                    <strong>Private California</strong><sup>[3]</sup><br>
                     <small>Examples: Stanford, USC</small>
                 </div>
-                <div class="target-amount" id="targetPrivate">Target: $340,000</div>
+                <div class="target-amount" id="targetPrivate">4 years today: $340,000</div>
                 <div class="status" id="statusPrivate"></div>
             </div>
         </div>
@@ -481,9 +481,9 @@
             document.getElementById('projectedBalance').textContent = formatCurrency(projectedBalance);
 
             // Update target amounts to show inflated costs
-            document.getElementById('targetUC').textContent = 'Target: ' + formatCurrency(inflatedCosts.uc);
-            document.getElementById('targetOutOfState').textContent = 'Target: ' + formatCurrency(inflatedCosts.outOfState);
-            document.getElementById('targetPrivate').textContent = 'Target: ' + formatCurrency(inflatedCosts.private);
+            document.getElementById('targetUC').textContent = '4 years at college: ' + formatCurrency(inflatedCosts.uc);
+            document.getElementById('targetOutOfState').textContent = '4 years at college: ' + formatCurrency(inflatedCosts.outOfState);
+            document.getElementById('targetPrivate').textContent = '4 years at college: ' + formatCurrency(inflatedCosts.private);
 
             // Calculate and display status for each college type (using inflated costs)
             const statusUC = getStatus(projectedBalance, inflatedCosts.uc);
