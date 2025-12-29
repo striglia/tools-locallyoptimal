@@ -318,11 +318,6 @@
             white-space: nowrap;
             margin-bottom: 4px;
         }
-        .year-label {
-            font-size: 10px;
-            color: #586069;
-            margin-top: 4px;
-        }
         .chart-legend {
             display: flex;
             gap: 20px;
@@ -663,8 +658,7 @@
 
                 // Calculate year-by-year balances for chart
                 const yearlyData = [];
-                const maxYears = Math.min(yearsUntilCollege, 20); // Cap at 20 years for chart clarity
-                const yearStep = yearsUntilCollege > 10 ? Math.ceil(yearsUntilCollege / 10) : 1;
+                const yearStep = 1; // Always show yearly bars
 
                 for (let year = 0; year <= yearsUntilCollege; year += yearStep) {
                     const months = year * 12;
@@ -739,11 +733,10 @@
                         <div class="year-group">
                             <div class="bars">
                                 <div class="bar taxable" style="height: ${heightTaxable}%"
-                                     data-value="${formatCurrency(data.balanceTaxable)}"></div>
+                                     data-value="Yr ${data.year}: ${formatCurrency(data.balanceTaxable)}"></div>
                                 <div class="bar tax-free" style="height: ${height529}%"
-                                     data-value="${formatCurrency(data.balance529)}"></div>
+                                     data-value="Yr ${data.year}: ${formatCurrency(data.balance529)}"></div>
                             </div>
-                            <div class="year-label">Yr ${data.year}</div>
                         </div>
                     `;
                 });
