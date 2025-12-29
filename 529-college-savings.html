@@ -260,7 +260,7 @@
         }
         .reference-label {
             position: absolute;
-            right: 5px;
+            left: 5px;
             top: -10px;
             font-size: 10px;
             font-weight: 500;
@@ -388,15 +388,15 @@
     <div class="inputs">
         <div class="input-group">
             <label for="currentBalance">Current 529 Balance ($)</label>
-            <input type="number" id="currentBalance" placeholder="10000" min="0" step="100">
+            <input type="number" id="currentBalance" value="100000" min="0" step="100">
         </div>
         <div class="input-group">
             <label for="monthlyContribution">Monthly Contribution ($)</label>
-            <input type="number" id="monthlyContribution" placeholder="500" min="0" step="50">
+            <input type="number" id="monthlyContribution" value="0" min="0" step="50">
         </div>
         <div class="input-group">
             <label for="childAge">Child's Current Age</label>
-            <input type="number" id="childAge" placeholder="8" min="0" max="17" step="1">
+            <input type="number" id="childAge" value="0" min="0" max="17" step="1">
         </div>
         <div class="input-group">
             <label for="returnRate">Expected Annual Return (%)</label>
@@ -679,11 +679,25 @@
                     inflatedCosts.private
                 );
 
-                // Generate Y-axis labels
+                // Calculate nice round increment for Y-axis
+                function getNiceIncrement(max) {
+                    const magnitude = Math.pow(10, Math.floor(Math.log10(max)));
+                    const normalized = max / magnitude;
+                    let increment;
+                    if (normalized <= 2) increment = 0.5 * magnitude;
+                    else if (normalized <= 5) increment = 1 * magnitude;
+                    else increment = 2 * magnitude;
+                    return increment;
+                }
+
+                const increment = getNiceIncrement(maxBalance);
+                const yAxisMax = Math.ceil(maxBalance / increment) * increment;
                 const yAxisSteps = 5;
+
+                // Generate Y-axis labels with round numbers
                 let yAxisHTML = '';
                 for (let i = 0; i < yAxisSteps; i++) {
-                    const value = (maxBalance / (yAxisSteps - 1)) * i;
+                    const value = (yAxisMax / (yAxisSteps - 1)) * i;
                     yAxisHTML += `<div class="y-label">${formatCurrency(value)}</div>`;
                 }
                 document.getElementById('yAxis').innerHTML = yAxisHTML;
@@ -692,7 +706,7 @@
                 let referenceLinesHTML = '';
 
                 // UC line
-                const ucHeight = (inflatedCosts.uc / maxBalance) * 100;
+                const ucHeight = (inflatedCosts.uc / yAxisMax) * 100;
                 referenceLinesHTML += `
                     <div class="reference-line uc" style="bottom: ${ucHeight}%">
                         <div class="reference-label uc">UC: ${formatCurrency(inflatedCosts.uc)}</div>
@@ -700,7 +714,7 @@
                 `;
 
                 // Out-of-State line
-                const outHeight = (inflatedCosts.outOfState / maxBalance) * 100;
+                const outHeight = (inflatedCosts.outOfState / yAxisMax) * 100;
                 referenceLinesHTML += `
                     <div class="reference-line outofstate" style="bottom: ${outHeight}%">
                         <div class="reference-label outofstate">Out-of-State: ${formatCurrency(inflatedCosts.outOfState)}</div>
@@ -708,7 +722,7 @@
                 `;
 
                 // Private line
-                const privateHeight = (inflatedCosts.private / maxBalance) * 100;
+                const privateHeight = (inflatedCosts.private / yAxisMax) * 100;
                 referenceLinesHTML += `
                     <div class="reference-line private" style="bottom: ${privateHeight}%">
                         <div class="reference-label private">Private: ${formatCurrency(inflatedCosts.private)}</div>
@@ -718,8 +732,8 @@
                 // Generate bar chart HTML
                 let chartHTML = referenceLinesHTML;
                 yearlyData.forEach(data => {
-                    const height529 = (data.balance529 / maxBalance) * 100;
-                    const heightTaxable = (data.balanceTaxable / maxBalance) * 100;
+                    const height529 = (data.balance529 / yAxisMax) * 100;
+                    const heightTaxable = (data.balanceTaxable / yAxisMax) * 100;
 
                     chartHTML += `
                         <div class="year-group">
