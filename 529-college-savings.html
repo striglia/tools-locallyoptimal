@@ -763,10 +763,14 @@
                 document.getElementById('taxChart').style.display = 'none';
             }
 
-            // Update target amounts to show inflated costs
-            document.getElementById('targetUC').textContent = '4 years at college: ' + formatCurrency(inflatedCosts.uc);
-            document.getElementById('targetOutOfState').textContent = '4 years at college: ' + formatCurrency(inflatedCosts.outOfState);
-            document.getElementById('targetPrivate').textContent = '4 years at college: ' + formatCurrency(inflatedCosts.private);
+            // Update target amounts to show both 2025 and inflated costs
+            const baseCosts = { uc: 140000, outOfState: 200000, private: 340000 };
+            document.getElementById('targetUC').innerHTML =
+                `2025: ${formatCurrency(baseCosts.uc)}<br><small style="color: #586069;">At college age (with inflation): ${formatCurrency(inflatedCosts.uc)}</small>`;
+            document.getElementById('targetOutOfState').innerHTML =
+                `2025: ${formatCurrency(baseCosts.outOfState)}<br><small style="color: #586069;">At college age (with inflation): ${formatCurrency(inflatedCosts.outOfState)}</small>`;
+            document.getElementById('targetPrivate').innerHTML =
+                `2025: ${formatCurrency(baseCosts.private)}<br><small style="color: #586069;">At college age (with inflation): ${formatCurrency(inflatedCosts.private)}</small>`;
 
             // Calculate and display status for each college type (using inflated costs)
             const statusUC = getStatus(projectedBalance, inflatedCosts.uc);
@@ -836,10 +840,12 @@
         }
 
         function clearAll() {
-            document.getElementById('currentBalance').value = '';
-            document.getElementById('monthlyContribution').value = '';
-            document.getElementById('childAge').value = '';
+            document.getElementById('currentBalance').value = '100000';
+            document.getElementById('monthlyContribution').value = '0';
+            document.getElementById('childAge').value = '0';
             document.getElementById('returnRate').value = '7';
+            document.getElementById('inflationRate').value = '5';
+            document.getElementById('taxRate').value = '15';
             document.getElementById('collegeAge').value = '18';
             document.getElementById('results').style.display = 'none';
             hideError();
