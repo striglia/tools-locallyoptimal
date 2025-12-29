@@ -507,6 +507,7 @@
             let hasRecommendations = false;
             let recommendationsHTML = '<h3>Recommendations</h3>';
 
+            // Check each tier and show recommendation for any shortfalls
             if (projectedBalance < inflatedCosts.uc) {
                 const requiredMonthly = calculateRequiredMonthly(
                     inflatedCosts.uc,
@@ -514,18 +515,29 @@
                     returnRate,
                     monthsUntilCollege
                 );
-                recommendationsHTML += `<div class="recommendation-item">To reach UC System target (${formatCurrency(inflatedCosts.uc)}), you would need to contribute ${formatCurrency(requiredMonthly)}/month</div>`;
+                recommendationsHTML += `<div class="recommendation-item">• To reach <strong>UC System</strong> (${formatCurrency(inflatedCosts.uc)}): contribute ${formatCurrency(requiredMonthly)}/month</div>`;
                 hasRecommendations = true;
             }
 
-            if (projectedBalance < inflatedCosts.private && projectedBalance >= inflatedCosts.uc) {
+            if (projectedBalance < inflatedCosts.outOfState) {
+                const requiredMonthly = calculateRequiredMonthly(
+                    inflatedCosts.outOfState,
+                    currentBalance,
+                    returnRate,
+                    monthsUntilCollege
+                );
+                recommendationsHTML += `<div class="recommendation-item">• To reach <strong>Out-of-State Public</strong> (${formatCurrency(inflatedCosts.outOfState)}): contribute ${formatCurrency(requiredMonthly)}/month</div>`;
+                hasRecommendations = true;
+            }
+
+            if (projectedBalance < inflatedCosts.private) {
                 const requiredMonthly = calculateRequiredMonthly(
                     inflatedCosts.private,
                     currentBalance,
                     returnRate,
                     monthsUntilCollege
                 );
-                recommendationsHTML += `<div class="recommendation-item">To reach Private California target (${formatCurrency(inflatedCosts.private)}), you would need to contribute ${formatCurrency(requiredMonthly)}/month</div>`;
+                recommendationsHTML += `<div class="recommendation-item">• To reach <strong>Private California</strong> (${formatCurrency(inflatedCosts.private)}): contribute ${formatCurrency(requiredMonthly)}/month</div>`;
                 hasRecommendations = true;
             }
 
