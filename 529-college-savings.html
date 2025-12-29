@@ -213,13 +213,69 @@
             font-size: 1em;
             color: #24292e;
         }
+        .chart-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+        .y-axis {
+            display: flex;
+            flex-direction: column-reverse;
+            justify-content: space-between;
+            height: 200px;
+            padding: 10px 0;
+            min-width: 60px;
+        }
+        .y-label {
+            font-size: 11px;
+            color: #586069;
+            text-align: right;
+            line-height: 1;
+        }
         .chart-container {
+            flex: 1;
+            position: relative;
             display: flex;
             gap: 8px;
             align-items: flex-end;
             height: 200px;
             padding: 10px 0;
             border-bottom: 2px solid #333;
+            border-left: 2px solid #333;
+        }
+        .reference-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 2px dashed;
+            pointer-events: none;
+        }
+        .reference-line.uc {
+            border-color: #0366d6;
+        }
+        .reference-line.outofstate {
+            border-color: #6f42c1;
+        }
+        .reference-line.private {
+            border-color: #d73a49;
+        }
+        .reference-label {
+            position: absolute;
+            right: 5px;
+            top: -10px;
+            font-size: 10px;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: white;
+        }
+        .reference-label.uc {
+            color: #0366d6;
+        }
+        .reference-label.outofstate {
+            color: #6f42c1;
+        }
+        .reference-label.private {
+            color: #d73a49;
         }
         .year-group {
             flex: 1;
@@ -378,7 +434,10 @@
 
         <div id="taxChart" class="tax-chart" style="display: none;">
             <h4>529 Tax-Free Growth Advantage (Year-by-Year)</h4>
-            <div class="chart-container" id="chartBars"></div>
+            <div class="chart-wrapper">
+                <div class="y-axis" id="yAxis"></div>
+                <div class="chart-container" id="chartBars"></div>
+            </div>
             <div class="chart-legend">
                 <div class="legend-item">
                     <div class="legend-color" style="background: #28a745;"></div>
@@ -614,11 +673,50 @@
                     yearlyData.push({ year, balance529, balanceTaxable });
                 }
 
-                // Find max value for scaling
-                const maxBalance = Math.max(...yearlyData.map(d => d.balance529));
+                // Find max value for scaling (include inflated costs for proper scale)
+                const maxBalance = Math.max(
+                    ...yearlyData.map(d => d.balance529),
+                    inflatedCosts.private
+                );
 
-                // Generate chart HTML
-                let chartHTML = '';
+                // Generate Y-axis labels
+                const yAxisSteps = 5;
+                let yAxisHTML = '';
+                for (let i = 0; i < yAxisSteps; i++) {
+                    const value = (maxBalance / (yAxisSteps - 1)) * i;
+                    yAxisHTML += `<div class="y-label">${formatCurrency(value)}</div>`;
+                }
+                document.getElementById('yAxis').innerHTML = yAxisHTML;
+
+                // Generate reference lines for college costs
+                let referenceLinesHTML = '';
+
+                // UC line
+                const ucHeight = (inflatedCosts.uc / maxBalance) * 100;
+                referenceLinesHTML += `
+                    <div class="reference-line uc" style="bottom: ${ucHeight}%">
+                        <div class="reference-label uc">UC: ${formatCurrency(inflatedCosts.uc)}</div>
+                    </div>
+                `;
+
+                // Out-of-State line
+                const outHeight = (inflatedCosts.outOfState / maxBalance) * 100;
+                referenceLinesHTML += `
+                    <div class="reference-line outofstate" style="bottom: ${outHeight}%">
+                        <div class="reference-label outofstate">Out-of-State: ${formatCurrency(inflatedCosts.outOfState)}</div>
+                    </div>
+                `;
+
+                // Private line
+                const privateHeight = (inflatedCosts.private / maxBalance) * 100;
+                referenceLinesHTML += `
+                    <div class="reference-line private" style="bottom: ${privateHeight}%">
+                        <div class="reference-label private">Private: ${formatCurrency(inflatedCosts.private)}</div>
+                    </div>
+                `;
+
+                // Generate bar chart HTML
+                let chartHTML = referenceLinesHTML;
                 yearlyData.forEach(data => {
                     const height529 = (data.balance529 / maxBalance) * 100;
                     const heightTaxable = (data.balanceTaxable / maxBalance) * 100;
