@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>529 College Savings Projector - Locally Optimal Tools</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+            font-size: 1.4em;
+        }
+        h3 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .inputs {
+            margin: 30px 0;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #24292e;
+        }
+        .input-group input {
+            width: 100%;
+            max-width: 400px;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #0366d6;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background: #0366d6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0256c7;
+        }
+        .error {
+            color: #d73a49;
+            background: #ffeef0;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 15px 0;
+            display: none;
+        }
+        #results {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+        .projection {
+            background: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .projection h3 {
+            margin-top: 0;
+            color: #586069;
+            font-size: 1em;
+            font-weight: normal;
+        }
+        .amount {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #0366d6;
+            margin: 10px 0;
+        }
+        .comparisons {
+            margin: 30px 0;
+        }
+        .comparison-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            background: white;
+        }
+        .college-type {
+            font-weight: 500;
+            flex: 2;
+        }
+        .target-amount {
+            flex: 1;
+            text-align: right;
+            color: #586069;
+            font-size: 0.95em;
+        }
+        .status {
+            flex: 2;
+            text-align: right;
+            font-weight: 500;
+        }
+        .status.on-track {
+            color: #28a745;
+        }
+        .status.shortfall {
+            color: #d73a49;
+        }
+        .status.ahead {
+            color: #0366d6;
+        }
+        .recommendations {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .recommendations h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .recommendation-item {
+            margin: 10px 0;
+            color: #856404;
+        }
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #586069;
+        }
+        footer a {
+            color: #0366d6;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .comparison-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .college-type, .target-amount, .status {
+                text-align: left;
+                margin: 5px 0;
+            }
+            .amount {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>529 College Savings Projector</h1>
+    <p>Calculate if your college savings are on track. Enter your current savings and contributions to see projected balance at college age.</p>
+
+    <div class="inputs">
+        <div class="input-group">
+            <label for="currentBalance">Current 529 Balance ($)</label>
+            <input type="number" id="currentBalance" placeholder="10000" min="0" step="100">
+        </div>
+        <div class="input-group">
+            <label for="monthlyContribution">Monthly Contribution ($)</label>
+            <input type="number" id="monthlyContribution" placeholder="500" min="0" step="50">
+        </div>
+        <div class="input-group">
+            <label for="childAge">Child's Current Age</label>
+            <input type="number" id="childAge" placeholder="8" min="0" max="17" step="1">
+        </div>
+        <div class="input-group">
+            <label for="returnRate">Expected Annual Return (%)</label>
+            <input type="number" id="returnRate" value="7" min="0" max="20" step="0.1">
+        </div>
+        <div class="input-group">
+            <label for="collegeAge">College Start Age</label>
+            <input type="number" id="collegeAge" value="18" min="18" max="25" step="1">
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="calculate()">Calculate</button>
+        <button onclick="clearAll()">Clear</button>
+    </div>
+
+    <div id="error" class="error"></div>
+
+    <div id="results" style="display: none;">
+        <h2>Results</h2>
+
+        <div class="projection">
+            <h3>Projected Balance at Age <span id="projectedAge"></span></h3>
+            <div class="amount" id="projectedBalance"></div>
+        </div>
+
+        <div class="comparisons">
+            <h3>Comparison to College Costs (4 years total)</h3>
+            <div class="comparison-item">
+                <div class="college-type">UC System (~$35k/year)</div>
+                <div class="target-amount">Target: $140,000</div>
+                <div class="status" id="statusUC"></div>
+            </div>
+            <div class="comparison-item">
+                <div class="college-type">Out-of-State Public (~$50k/year)</div>
+                <div class="target-amount">Target: $200,000</div>
+                <div class="status" id="statusOutOfState"></div>
+            </div>
+            <div class="comparison-item">
+                <div class="college-type">Private California (~$85k/year)</div>
+                <div class="target-amount">Target: $340,000</div>
+                <div class="status" id="statusPrivate"></div>
+            </div>
+        </div>
+
+        <div id="recommendations" class="recommendations" style="display: none;"></div>
+    </div>
+
+    <footer>
+        <p><a href="index.html">← Back to tools</a></p>
+    </footer>
+
+    <script>
+        const COLLEGE_COSTS = {
+            uc: { name: 'UC System', annual: 35000, total: 140000 },
+            outOfState: { name: 'Out-of-State Public', annual: 50000, total: 200000 },
+            private: { name: 'Private California', annual: 85000, total: 340000 }
+        };
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function formatCurrency(amount) {
+            return '$' + Math.round(amount).toLocaleString('en-US');
+        }
+
+        function calculateFutureValue(presentValue, monthlyPayment, annualRate, months) {
+            // FV = PV × (1 + r)^n + PMT × [((1 + r)^n - 1) / r]
+            // Where r is monthly rate
+            const monthlyRate = annualRate / 12 / 100;
+
+            if (monthlyRate === 0) {
+                // If no return, simple addition
+                return presentValue + (monthlyPayment * months);
+            }
+
+            const growthFactor = Math.pow(1 + monthlyRate, months);
+            const pvGrowth = presentValue * growthFactor;
+            const pmtGrowth = monthlyPayment * ((growthFactor - 1) / monthlyRate);
+
+            return pvGrowth + pmtGrowth;
+        }
+
+        function getStatus(projected, target) {
+            const difference = projected - target;
+            const percentDiff = (difference / target) * 100;
+
+            if (difference >= 0) {
+                return {
+                    className: 'ahead',
+                    text: '✓ Ahead by ' + formatCurrency(difference)
+                };
+            } else if (percentDiff > -10) {
+                // Within 10% of target
+                return {
+                    className: 'on-track',
+                    text: '⚠ Close: Shortfall of ' + formatCurrency(Math.abs(difference))
+                };
+            } else {
+                return {
+                    className: 'shortfall',
+                    text: '✗ Shortfall of ' + formatCurrency(Math.abs(difference))
+                };
+            }
+        }
+
+        function calculateRequiredMonthly(target, presentValue, annualRate, months) {
+            // Solve for PMT in: FV = PV × (1 + r)^n + PMT × [((1 + r)^n - 1) / r]
+            // PMT = (FV - PV × (1 + r)^n) / [((1 + r)^n - 1) / r]
+            const monthlyRate = annualRate / 12 / 100;
+
+            if (monthlyRate === 0) {
+                return (target - presentValue) / months;
+            }
+
+            const growthFactor = Math.pow(1 + monthlyRate, months);
+            const pvGrowth = presentValue * growthFactor;
+            const remaining = target - pvGrowth;
+
+            if (remaining <= 0) {
+                return 0; // Already have enough
+            }
+
+            return remaining / ((growthFactor - 1) / monthlyRate);
+        }
+
+        function calculate() {
+            hideError();
+
+            // Get input values
+            const currentBalance = parseFloat(document.getElementById('currentBalance').value) || 0;
+            const monthlyContribution = parseFloat(document.getElementById('monthlyContribution').value) || 0;
+            const childAge = parseFloat(document.getElementById('childAge').value);
+            const returnRate = parseFloat(document.getElementById('returnRate').value);
+            const collegeAge = parseFloat(document.getElementById('collegeAge').value);
+
+            // Validate inputs
+            if (isNaN(childAge) || isNaN(returnRate) || isNaN(collegeAge)) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            if (childAge < 0 || childAge >= collegeAge) {
+                showError('Child\'s current age must be less than college start age');
+                return;
+            }
+
+            if (currentBalance < 0 || monthlyContribution < 0) {
+                showError('Balance and contribution must be non-negative');
+                return;
+            }
+
+            if (returnRate < 0 || returnRate > 20) {
+                showError('Return rate should be between 0% and 20%');
+                return;
+            }
+
+            // Calculate years and months until college
+            const yearsUntilCollege = collegeAge - childAge;
+            const monthsUntilCollege = yearsUntilCollege * 12;
+
+            // Calculate future value
+            const projectedBalance = calculateFutureValue(
+                currentBalance,
+                monthlyContribution,
+                returnRate,
+                monthsUntilCollege
+            );
+
+            // Display projected balance
+            document.getElementById('projectedAge').textContent = collegeAge;
+            document.getElementById('projectedBalance').textContent = formatCurrency(projectedBalance);
+
+            // Calculate and display status for each college type
+            const statusUC = getStatus(projectedBalance, COLLEGE_COSTS.uc.total);
+            const statusOutOfState = getStatus(projectedBalance, COLLEGE_COSTS.outOfState.total);
+            const statusPrivate = getStatus(projectedBalance, COLLEGE_COSTS.private.total);
+
+            const ucElement = document.getElementById('statusUC');
+            ucElement.textContent = statusUC.text;
+            ucElement.className = 'status ' + statusUC.className;
+
+            const outOfStateElement = document.getElementById('statusOutOfState');
+            outOfStateElement.textContent = statusOutOfState.text;
+            outOfStateElement.className = 'status ' + statusOutOfState.className;
+
+            const privateElement = document.getElementById('statusPrivate');
+            privateElement.textContent = statusPrivate.text;
+            privateElement.className = 'status ' + statusPrivate.className;
+
+            // Show recommendations if there are shortfalls
+            const recommendationsDiv = document.getElementById('recommendations');
+            let hasRecommendations = false;
+            let recommendationsHTML = '<h3>Recommendations</h3>';
+
+            if (projectedBalance < COLLEGE_COSTS.uc.total) {
+                const requiredMonthly = calculateRequiredMonthly(
+                    COLLEGE_COSTS.uc.total,
+                    currentBalance,
+                    returnRate,
+                    monthsUntilCollege
+                );
+                recommendationsHTML += `<div class="recommendation-item">To reach UC System target (${formatCurrency(COLLEGE_COSTS.uc.total)}), you would need to contribute ${formatCurrency(requiredMonthly)}/month</div>`;
+                hasRecommendations = true;
+            }
+
+            if (projectedBalance < COLLEGE_COSTS.private.total && projectedBalance >= COLLEGE_COSTS.uc.total) {
+                const requiredMonthly = calculateRequiredMonthly(
+                    COLLEGE_COSTS.private.total,
+                    currentBalance,
+                    returnRate,
+                    monthsUntilCollege
+                );
+                recommendationsHTML += `<div class="recommendation-item">To reach Private California target (${formatCurrency(COLLEGE_COSTS.private.total)}), you would need to contribute ${formatCurrency(requiredMonthly)}/month</div>`;
+                hasRecommendations = true;
+            }
+
+            if (hasRecommendations) {
+                recommendationsDiv.innerHTML = recommendationsHTML;
+                recommendationsDiv.style.display = 'block';
+            } else {
+                recommendationsDiv.style.display = 'none';
+            }
+
+            // Show results
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function clearAll() {
+            document.getElementById('currentBalance').value = '';
+            document.getElementById('monthlyContribution').value = '';
+            document.getElementById('childAge').value = '';
+            document.getElementById('returnRate').value = '7';
+            document.getElementById('collegeAge').value = '18';
+            document.getElementById('results').style.display = 'none';
+            hideError();
+        }
+
+        // Auto-calculate on Enter key
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    calculate();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
