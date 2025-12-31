@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time-Money Trade-Off Calculator - Locally Optimal Tools</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+            font-size: 1.4em;
+        }
+        .intro {
+            background: #f6f8fa;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+            color: #24292e;
+        }
+        .intro p {
+            margin: 8px 0;
+        }
+        .intro p:first-child {
+            margin-top: 0;
+        }
+        .intro p:last-child {
+            margin-bottom: 0;
+        }
+        .inputs {
+            margin: 25px 0;
+        }
+        .input-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .input-group {
+            flex: 1;
+            min-width: 180px;
+        }
+        .input-group.full-width {
+            flex: 100%;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #24292e;
+            font-size: 0.95em;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #0366d6;
+        }
+        .input-group input:invalid,
+        .input-group input.invalid {
+            border-color: #d73a49;
+            background-color: #ffeef0;
+        }
+        .input-group small {
+            color: #6a737d;
+            font-size: 0.85em;
+            display: block;
+            margin-top: 4px;
+        }
+        #results {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+        .hourly-rate-display {
+            background: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .rate-row {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .rate-item {
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+        }
+        .rate-label {
+            font-size: 0.9em;
+            color: #586069;
+            margin-bottom: 5px;
+        }
+        .rate-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #0366d6;
+        }
+        .rate-sublabel {
+            font-size: 0.8em;
+            color: #6a737d;
+            margin-top: 3px;
+        }
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .task-table th {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 2px solid #e1e4e8;
+            font-weight: 600;
+            color: #24292e;
+            font-size: 0.9em;
+        }
+        .task-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e1e4e8;
+        }
+        .task-table tr:last-child td {
+            border-bottom: none;
+        }
+        .task-table .task-name {
+            font-weight: 500;
+        }
+        .task-table .task-time {
+            color: #6a737d;
+            font-size: 0.9em;
+        }
+        .task-table .your-cost, .task-table .outsource-cost, .task-table .percent-value {
+            font-weight: 500;
+            text-align: right;
+        }
+        .task-table .percent-value {
+            font-size: 0.9em;
+        }
+        .task-table tr.worth-outsourcing {
+            background: rgba(40, 167, 69, 0.15);
+        }
+        .task-table tr.worth-outsourcing td {
+            color: #155724;
+        }
+        .task-table tr.worth-outsourcing .percent-value {
+            color: #28a745;
+            font-weight: 600;
+        }
+        .task-table tr:not(.worth-outsourcing) .percent-value {
+            color: #6a737d;
+        }
+        .task-category {
+            background: #f6f8fa;
+            font-weight: 600;
+            color: #24292e;
+        }
+        .task-category td {
+            padding: 10px;
+            font-size: 0.95em;
+        }
+        .assumptions-toggle {
+            background: none;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #586069;
+            margin-top: 20px;
+        }
+        .assumptions-toggle:hover {
+            background: #f6f8fa;
+        }
+        .assumptions-panel {
+            display: none;
+            margin-top: 15px;
+            padding: 20px;
+            background: #f6f8fa;
+            border-radius: 6px;
+        }
+        .assumptions-panel.visible {
+            display: block;
+        }
+        .assumptions-panel h3 {
+            margin-top: 0;
+            font-size: 1em;
+            color: #24292e;
+        }
+        .assumptions-disclaimer {
+            font-size: 0.85em;
+            color: #6a737d;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        .assumption-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 12px;
+        }
+        .assumption-item {
+            font-size: 0.9em;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e1e4e8;
+        }
+        .assumption-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+        .assumption-header label {
+            font-weight: 500;
+            flex: 1;
+        }
+        .assumption-inputs {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .assumption-item input {
+            width: 55px;
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+        .assumption-source {
+            font-size: 0.8em;
+            color: #6a737d;
+            font-style: italic;
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #586069;
+        }
+        footer a {
+            color: #0366d6;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+                margin: 20px auto;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .input-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .input-group {
+                min-width: 100%;
+            }
+            .toggle-btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            .rate-value {
+                font-size: 1.6em;
+            }
+            .rate-value.secondary {
+                font-size: 1.3em;
+            }
+            .task-table {
+                font-size: 0.9em;
+            }
+            .task-table th, .task-table td {
+                padding: 8px 6px;
+            }
+            .assumption-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Time-Money Trade-Off Calculator</h1>
+
+    <div class="intro">
+        <p>Understanding the value of your time can help make outsourcing decisions clearer. Enter your income and work hours to see what your time is really worth.</p>
+        <p><em>I've found it hard to conceptualize outsourcing tasks as an option. This calculator provides a simple view of time-value for various income levels to help make these trade-offs concrete.</em></p>
+    </div>
+
+    <div class="inputs">
+        <div class="input-row">
+            <div class="input-group">
+                <label for="region">Region</label>
+                <select id="region">
+                    <option value="sf">SF Bay Area</option>
+                    <option value="nyc">New York City</option>
+                    <option value="la">Los Angeles</option>
+                    <option value="seattle">Seattle</option>
+                    <option value="boston">Boston</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-row">
+            <div class="input-group">
+                <label for="annualIncome">Annual Household Income ($)</label>
+                <input type="number" id="annualIncome" value="100000" min="0" step="1000">
+            </div>
+        </div>
+
+        <div class="input-row">
+            <div class="input-group">
+                <label for="hoursPerWeek">Hours Worked Per Week</label>
+                <input type="number" id="hoursPerWeek" value="40" min="1" max="100" step="1">
+            </div>
+            <div class="input-group">
+                <label for="weeksPerYear">Weeks Worked Per Year</label>
+                <input type="number" id="weeksPerYear" value="52" min="1" max="52" step="1">
+            </div>
+            <div class="input-group">
+                <label for="taxRate">Effective Tax Rate (%)</label>
+                <input type="number" id="taxRate" value="20" min="0" max="55" step="1">
+                <small>Combined federal + state + local</small>
+            </div>
+            <div class="input-group">
+                <label for="worthItThreshold">Worth It If Under (%)</label>
+                <input type="number" id="worthItThreshold" value="80" min="1" max="200" step="5">
+                <small>Highlight tasks where outsourcing costs less than this % of your time cost</small>
+            </div>
+        </div>
+    </div>
+
+    <div id="results">
+        <h2>Your Hourly Rate</h2>
+
+        <div class="hourly-rate-display">
+            <div class="rate-row">
+                <div class="rate-item">
+                    <div class="rate-label">Your Hourly Value (after tax)</div>
+                    <div class="rate-value" id="postTaxRate">$142</div>
+                    <div class="rate-sublabel"><span id="preTaxRate">$178</span>/hr pre-tax</div>
+                </div>
+            </div>
+        </div>
+
+        <h2>Task Comparison</h2>
+        <p style="color: #586069; font-size: 0.9em;">"Your Time Cost" = your hourly value &times; task hours. Green = outsourcing costs &lt;<span id="thresholdDisplay">80</span>% of your time cost.</p>
+
+        <button type="button" class="assumptions-toggle" id="assumptionsToggle">Edit Assumptions</button>
+
+        <div class="assumptions-panel" id="assumptionsPanel">
+            <h3>Task Assumptions</h3>
+            <p class="assumptions-disclaimer">Base costs from SF Bay Area (TaskRabbit, Thumbtack, Care.com), adjusted by regional cost-of-living multiplier (<span id="colMultiplierDisplay">1.0x</span>). Adjust as needed.</p>
+            <div class="assumption-grid" id="assumptionsGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <table class="task-table" id="taskTable">
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th style="text-align: right;">Your Time Cost</th>
+                    <th style="text-align: right;">Outsource Cost</th>
+                    <th style="text-align: right;">% of Your Time</th>
+                </tr>
+            </thead>
+            <tbody id="taskTableBody">
+                <!-- Populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        <p><a href="index.html">&larr; Back to tools</a></p>
+    </footer>
+
+    <script>
+        // Base task costs (SF Bay Area) with sources
+        const BASE_TASKS = {
+            houseCleaning: { name: 'House cleaning (full)', hours: 2.5, cost: 185, source: 'Thumbtack/Handy avg for 2-3 bed home' },
+            laundry: { name: 'Laundry (wash/fold/put away)', hours: 1.5, cost: 50, source: 'TaskRabbit rates; wash-fold services ~$2/lb' },
+            groceryShopping: { name: 'Grocery shopping', hours: 1.5, cost: 40, source: 'Instacart fees + service fee + tip' },
+            mealPrep: { name: 'Meal prep (weekly)', hours: 3.5, cost: 225, source: 'Meal services ~$12-15/meal; personal chef $150-400/wk' },
+            yardWork: { name: 'Yard work', hours: 2.5, cost: 150, source: 'TaskRabbit/Thumbtack avg for yard cleanup' },
+            carWash: { name: 'Car wash (detail)', hours: 1.5, cost: 100, source: 'Mobile detailing services avg; range $75-200' },
+            dryCleaningPickup: { name: 'Dry cleaning pickup', hours: 0.75, cost: 15, source: 'Delivery service pickup/dropoff fees' },
+            packageReturns: { name: 'Package returns', hours: 0.75, cost: 20, source: 'TaskRabbit errand minimum' },
+            waitingForService: { name: 'Waiting for service appt', hours: 3, cost: 120, source: 'TaskRabbit ~$40/hr for waiting tasks' },
+            dogWalking: { name: 'Dog walking (per walk)', hours: 0.5, cost: 25, source: 'Rover/Wag avg; $20-30/walk in metro areas' },
+            schoolPickup: { name: 'School pickup/dropoff', hours: 0.75, cost: 40, source: 'Care.com short task; HopSkipDrive ~$30/ride' },
+            activityTransport: { name: 'Activity transport', hours: 1.5, cost: 75, source: 'Care.com rate including wait time' },
+            homeworkHelp: { name: 'Homework help (tutoring)', hours: 1.5, cost: 105, source: 'Wyzant/Care.com tutor rates $60-80/hr' }
+        };
+
+        // Region data with COL multipliers (SF = 1.0 base)
+        const REGIONS = {
+            sf: { name: 'SF Bay Area', colMultiplier: 1.0, defaultIncome: 100000 },
+            nyc: { name: 'New York City', colMultiplier: 1.0, defaultIncome: 100000 },
+            seattle: { name: 'Seattle', colMultiplier: 0.90, defaultIncome: 100000 },
+            boston: { name: 'Boston', colMultiplier: 0.88, defaultIncome: 100000 },
+            la: { name: 'Los Angeles', colMultiplier: 0.85, defaultIncome: 100000 }
+        };
+
+        const TASK_CATEGORIES = {
+            household: {
+                name: 'Household Tasks',
+                tasks: ['houseCleaning', 'laundry', 'groceryShopping', 'mealPrep', 'yardWork']
+            },
+            errands: {
+                name: 'Personal Errands',
+                tasks: ['carWash', 'dryCleaningPickup', 'packageReturns', 'waitingForService', 'dogWalking']
+            },
+            childcare: {
+                name: 'Childcare Tasks',
+                tasks: ['schoolPickup', 'activityTransport', 'homeworkHelp']
+            }
+        };
+
+        // Current state
+        let currentRegion = 'sf';
+        let customAssumptions = {};
+
+        // DOM elements
+        const regionSelect = document.getElementById('region');
+        const annualIncomeInput = document.getElementById('annualIncome');
+        const hoursPerWeekInput = document.getElementById('hoursPerWeek');
+        const weeksPerYearInput = document.getElementById('weeksPerYear');
+        const taxRateInput = document.getElementById('taxRate');
+        const worthItThresholdInput = document.getElementById('worthItThreshold');
+        const assumptionsToggle = document.getElementById('assumptionsToggle');
+        const assumptionsPanel = document.getElementById('assumptionsPanel');
+
+        function formatCurrency(amount) {
+            return '$' + Math.round(amount).toLocaleString('en-US');
+        }
+
+        function getTaskData(taskKey) {
+            const baseTask = BASE_TASKS[taskKey];
+            const colMultiplier = REGIONS[currentRegion].colMultiplier;
+            const custom = customAssumptions[taskKey] || {};
+            const adjustedCost = Math.round(baseTask.cost * colMultiplier);
+            return {
+                name: baseTask.name,
+                hours: custom.hours !== undefined ? custom.hours : baseTask.hours,
+                cost: custom.cost !== undefined ? custom.cost : adjustedCost,
+                source: baseTask.source
+            };
+        }
+
+        function validateAndClamp(input, min, max, defaultVal) {
+            let value = parseFloat(input.value);
+            if (isNaN(value)) {
+                value = defaultVal;
+            }
+            const clamped = Math.max(min, Math.min(max, value));
+            const isValid = value >= min && value <= max;
+            input.classList.toggle('invalid', !isValid);
+            return clamped;
+        }
+
+        function calculateHourlyRate(income) {
+            const hours = validateAndClamp(hoursPerWeekInput, 1, 100, 40);
+            const weeks = validateAndClamp(weeksPerYearInput, 1, 52, 52);
+            const taxRate = validateAndClamp(taxRateInput, 0, 55, 20);
+
+            const annualHours = hours * weeks;
+            if (annualHours === 0) return { preTax: 0, postTax: 0 };
+
+            const preTax = income / annualHours;
+            const postTax = preTax * (1 - taxRate / 100);
+
+            return { preTax, postTax };
+        }
+
+        function updateRateDisplay() {
+            const income = validateAndClamp(annualIncomeInput, 0, 10000000, 100000);
+            const rates = calculateHourlyRate(income);
+
+            document.getElementById('preTaxRate').textContent = formatCurrency(rates.preTax);
+            document.getElementById('postTaxRate').textContent = formatCurrency(rates.postTax);
+        }
+
+        function getPostTaxRate() {
+            const income = validateAndClamp(annualIncomeInput, 0, 10000000, 100000);
+            return calculateHourlyRate(income).postTax;
+        }
+
+        function updateTaskTable() {
+            const postTaxRate = getPostTaxRate();
+            const threshold = validateAndClamp(worthItThresholdInput, 1, 200, 80);
+            const tbody = document.getElementById('taskTableBody');
+            tbody.innerHTML = '';
+
+            // Update threshold display text
+            document.getElementById('thresholdDisplay').textContent = threshold + '%';
+
+            for (const [catKey, category] of Object.entries(TASK_CATEGORIES)) {
+                // Category header
+                const catRow = document.createElement('tr');
+                catRow.className = 'task-category';
+                catRow.innerHTML = `<td colspan="4">${category.name}</td>`;
+                tbody.appendChild(catRow);
+
+                // Tasks in category
+                for (const taskKey of category.tasks) {
+                    const task = getTaskData(taskKey);
+                    const yourCost = postTaxRate * task.hours;
+                    const percentOfTime = yourCost > 0 ? Math.round((task.cost / yourCost) * 100) : 0;
+                    const worthOutsourcing = percentOfTime < threshold;
+
+                    const row = document.createElement('tr');
+                    if (worthOutsourcing) {
+                        row.className = 'worth-outsourcing';
+                    }
+
+                    row.innerHTML = `
+                        <td>
+                            <span class="task-name">${task.name}</span><br>
+                            <span class="task-time">${task.hours} hours</span>
+                        </td>
+                        <td class="your-cost">${formatCurrency(yourCost)}</td>
+                        <td class="outsource-cost">${formatCurrency(task.cost)}</td>
+                        <td class="percent-value">${percentOfTime}%</td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            }
+        }
+
+        function buildAssumptionsPanel() {
+            const grid = document.getElementById('assumptionsGrid');
+            grid.innerHTML = '';
+
+            // Update COL multiplier display
+            const colMultiplier = REGIONS[currentRegion].colMultiplier;
+            document.getElementById('colMultiplierDisplay').textContent = colMultiplier + 'x';
+
+            for (const [catKey, category] of Object.entries(TASK_CATEGORIES)) {
+                for (const taskKey of category.tasks) {
+                    const task = getTaskData(taskKey);
+
+                    const item = document.createElement('div');
+                    item.className = 'assumption-item';
+                    item.innerHTML = `
+                        <div class="assumption-header">
+                            <label>${task.name}</label>
+                            <div class="assumption-inputs">
+                                <input type="number" step="0.25" min="0" value="${task.hours}"
+                                       data-task="${taskKey}" data-field="hours" title="Hours">
+                                <span>hrs</span>
+                                <input type="number" step="5" min="0" value="${task.cost}"
+                                       data-task="${taskKey}" data-field="cost" title="Outsource cost">
+                                <span>$</span>
+                            </div>
+                        </div>
+                        <div class="assumption-source">${task.source}</div>
+                    `;
+                    grid.appendChild(item);
+                }
+            }
+
+            // Add event listeners to assumption inputs
+            grid.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', handleAssumptionChange);
+            });
+        }
+
+        function handleAssumptionChange(e) {
+            const taskKey = e.target.dataset.task;
+            const field = e.target.dataset.field;
+            const value = parseFloat(e.target.value);
+
+            if (!customAssumptions[taskKey]) {
+                customAssumptions[taskKey] = {};
+            }
+            customAssumptions[taskKey][field] = value;
+
+            updateTaskTable();
+        }
+
+        function updateRegionDefaults() {
+            const region = REGIONS[currentRegion];
+            annualIncomeInput.value = region.defaultIncome;
+
+            // Reset custom assumptions when region changes
+            customAssumptions = {};
+            buildAssumptionsPanel();
+        }
+
+        function calculate() {
+            updateRateDisplay();
+            updateTaskTable();
+        }
+
+        // Event listeners
+        regionSelect.addEventListener('change', (e) => {
+            currentRegion = e.target.value;
+            updateRegionDefaults();
+            calculate();
+        });
+
+        [annualIncomeInput, hoursPerWeekInput, weeksPerYearInput, taxRateInput, worthItThresholdInput].forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+
+        assumptionsToggle.addEventListener('click', () => {
+            assumptionsPanel.classList.toggle('visible');
+            assumptionsToggle.textContent = assumptionsPanel.classList.contains('visible')
+                ? 'Hide Assumptions'
+                : 'Edit Assumptions';
+        });
+
+        // Initialize
+        buildAssumptionsPanel();
+        calculate();
+    </script>
+</body>
+</html>
