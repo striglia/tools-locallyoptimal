@@ -13,9 +13,20 @@
             line-height: 1.6;
             color: #333;
         }
-        h1 {
+        h1, h2 {
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 40px;
+            font-size: 1.4em;
+        }
+        code {
+            background: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.9em;
         }
         .tools-list {
             list-style: none;
@@ -78,6 +89,16 @@
         <li class="tool-item">
             <h3><a href="slack-text-cleaner.html">Slack Text Cleaner</a></h3>
             <p>Clean up copy/pasted Slack conversations into readable Markdown</p>
+        </li>
+    </ul>
+
+    <h2>Python Scripts</h2>
+    <p>Command-line tools that can be run via <code>uv run</code> directly from URLs.</p>
+
+    <ul class="tools-list">
+        <li class="tool-item">
+            <h3><a href="python/README.md">PR Reviewer</a></h3>
+            <p>AI-powered GitHub PR code review using Claude Code</p>
         </li>
     </ul>
 
