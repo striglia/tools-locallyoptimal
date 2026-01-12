@@ -274,7 +274,9 @@
             <div class="summary-card highlight">
                 <div class="summary-label">Total Cost of Advisor</div>
                 <div class="summary-value" id="totalCost">$0</div>
-                <div class="summary-sublabel">fees + opportunity cost</div>
+                <div class="summary-sublabel">
+                    <span id="feesPaid">$0</span> fees paid + <span id="opportunityCost">$0</span> lost growth
+                </div>
             </div>
         </div>
 
@@ -348,20 +350,26 @@
             };
         }
 
-        function calculateGrowth(startingAmount, monthlyContribution, years, annualReturn) {
+        function calculateGrowth(startingAmount, monthlyContribution, years, annualReturn, advisorFee = 0) {
             const yearlyData = [startingAmount];
             let balance = startingAmount;
+            let totalFeesPaid = 0;
 
             for (let year = 1; year <= years; year++) {
                 // Add monthly contributions and apply yearly return
                 for (let month = 0; month < 12; month++) {
                     balance += monthlyContribution;
                     balance *= (1 + annualReturn / 12);
+                    // Track fees paid (deducted monthly from balance)
+                    if (advisorFee > 0) {
+                        const monthlyFee = balance * (advisorFee / 12);
+                        totalFeesPaid += monthlyFee;
+                    }
                 }
                 yearlyData.push(balance);
             }
 
-            return yearlyData;
+            return { yearlyData, totalFeesPaid };
         }
 
         function runMonteCarloSimulation(startingAmount, monthlyContribution, years, annualReturn, volatility, numSimulations = 1000) {
@@ -616,28 +624,36 @@
             const inputs = getInputValues();
 
             // Calculate deterministic growth
-            const noFeeData = calculateGrowth(
+            const noFeeResult = calculateGrowth(
                 inputs.startingAmount,
                 inputs.monthlyContribution,
                 inputs.years,
                 inputs.annualReturn
             );
 
-            const withFeeData = calculateGrowth(
+            const withFeeResult = calculateGrowth(
                 inputs.startingAmount,
                 inputs.monthlyContribution,
                 inputs.years,
-                inputs.annualReturn - inputs.advisorFee
+                inputs.annualReturn - inputs.advisorFee,
+                inputs.advisorFee
             );
+
+            const noFeeData = noFeeResult.yearlyData;
+            const withFeeData = withFeeResult.yearlyData;
+            const feesPaid = withFeeResult.totalFeesPaid;
 
             const finalNoFee = noFeeData[noFeeData.length - 1];
             const finalWithFee = withFeeData[withFeeData.length - 1];
             const totalCost = finalNoFee - finalWithFee;
+            const opportunityCost = totalCost - feesPaid;
 
             // Update summary
             document.getElementById('finalNoFee').textContent = formatCurrency(finalNoFee);
             document.getElementById('finalWithFee').textContent = formatCurrency(finalWithFee);
             document.getElementById('totalCost').textContent = formatCurrency(totalCost);
+            document.getElementById('feesPaid').textContent = formatCurrency(feesPaid);
+            document.getElementById('opportunityCost').textContent = formatCurrency(opportunityCost);
             document.getElementById('feeDisplay').textContent = inputs.advisorFee * 100 + '%';
             document.getElementById('yearsDisplay1').textContent = inputs.years;
             document.getElementById('yearsDisplay2').textContent = inputs.years;
