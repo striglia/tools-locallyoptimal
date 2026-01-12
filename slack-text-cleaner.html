@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slack Text Cleaner - Locally Optimal Tools</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 25px 0;
+        }
+        .section h2 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 13px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #0366d6;
+        }
+        .output-area {
+            background: #f6f8fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px;
+            min-height: 200px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        .output-area.empty {
+            color: #999;
+            font-style: italic;
+        }
+        .options {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .options label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .options input[type="checkbox"] {
+            cursor: pointer;
+        }
+        .options select {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-left: 4px;
+        }
+        .options select:focus {
+            outline: none;
+            border-color: #0366d6;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        button {
+            background: #0366d6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0256c7;
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #5a6268;
+        }
+        button.success {
+            background: #28a745;
+        }
+        .stats {
+            font-size: 13px;
+            color: #666;
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #586069;
+        }
+        footer a {
+            color: #0366d6;
+        }
+        @media (max-width: 600px) {
+            body {
+                margin: 20px auto;
+            }
+            textarea, .output-area {
+                min-height: 150px;
+            }
+            .options {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .stats {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Slack Text Cleaner</h1>
+    <p>Clean up copy/pasted Slack conversations into readable Markdown.</p>
+
+    <div class="section">
+        <h2>Paste Slack Conversation</h2>
+        <textarea id="input" placeholder="Paste your Slack conversation here..."></textarea>
+    </div>
+
+    <div class="options">
+        <label>
+            <input type="checkbox" id="includeTimestamps">
+            Include timestamps
+        </label>
+        <label for="timestampFormat" id="timestampFormatLabel" style="display: none;">
+            Format:
+            <select id="timestampFormat">
+                <option value="iso">ISO (2024-12-30T14:30)</option>
+                <option value="friendly">Friendly (Dec 30, 2:30 PM)</option>
+                <option value="time-only">Time only (2:30 PM)</option>
+            </select>
+        </label>
+        <label>
+            <input type="checkbox" id="includeSystemMessages">
+            Include system messages (joins, leaves, etc.)
+        </label>
+    </div>
+
+    <div class="section">
+        <h2>Cleaned Markdown</h2>
+        <div id="output" class="output-area empty">Cleaned output will appear here</div>
+        <div class="controls">
+            <div>
+                <button id="copyBtn" onclick="copyToClipboard()">Copy to Clipboard</button>
+                <button class="secondary" onclick="clearAll()">Clear</button>
+            </div>
+            <div class="stats" id="stats"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p><a href="index.html">&larr; Back to tools</a></p>
+    </footer>
+
+    <script>
+        const inputEl = document.getElementById('input');
+        const outputEl = document.getElementById('output');
+        const statsEl = document.getElementById('stats');
+        const copyBtn = document.getElementById('copyBtn');
+        const includeTimestamps = document.getElementById('includeTimestamps');
+        const timestampFormat = document.getElementById('timestampFormat');
+        const timestampFormatLabel = document.getElementById('timestampFormatLabel');
+        const includeSystemMessages = document.getElementById('includeSystemMessages');
+
+        // Real-time processing
+        inputEl.addEventListener('input', processInput);
+        includeTimestamps.addEventListener('change', () => {
+            timestampFormatLabel.style.display = includeTimestamps.checked ? '' : 'none';
+            processInput();
+        });
+        timestampFormat.addEventListener('change', processInput);
+        includeSystemMessages.addEventListener('change', processInput);
+
+        function processInput() {
+            const raw = inputEl.value;
+            if (!raw.trim()) {
+                outputEl.textContent = 'Cleaned output will appear here';
+                outputEl.classList.add('empty');
+                statsEl.textContent = '';
+                return;
+            }
+
+            const cleaned = cleanSlackText(raw);
+
+            if (!cleaned.trim()) {
+                outputEl.textContent = 'No content after filtering';
+                outputEl.classList.add('empty');
+                statsEl.textContent = '';
+                return;
+            }
+
+            outputEl.textContent = cleaned;
+            outputEl.classList.remove('empty');
+
+            // Update stats
+            const words = cleaned.trim().split(/\s+/).filter(w => w).length;
+            const chars = cleaned.length;
+            statsEl.textContent = `${words} words, ${chars} chars`;
+        }
+
+        function cleanSlackText(text) {
+            const lines = text.split('\n');
+            const messages = [];
+            let currentMessage = null;
+            let inCodeBlock = false;
+            let codeBlockContent = [];
+            let currentDate = null;  // Track the current date context
+
+            // System message patterns
+            const systemPatterns = [
+                /^.+\s+joined\s+#/i,
+                /^.+\s+left\s+#/i,
+                /^.+\s+joined\s+the\s+channel/i,
+                /^.+\s+left\s+the\s+channel/i,
+                /^.+\s+set\s+the\s+channel\s+topic/i,
+                /^.+\s+set\s+the\s+channel\s+description/i,
+                /^.+\s+was\s+added\s+to/i,
+                /^.+\s+was\s+removed\s+from/i,
+                /^.+\s+renamed\s+the\s+channel/i,
+                /^.+\s+archived\s+the\s+channel/i
+            ];
+
+            // Date header patterns from Slack
+            // "Today", "Yesterday", "Monday, December 30th", "December 30th, 2024", etc.
+            const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+            const datePatterns = [
+                // "Today" or "Yesterday"
+                /^(Today|Yesterday)\s*$/i,
+                // "Monday, December 30th" or "Tuesday, Jan 5"
+                new RegExp(`^(?:${days.join('|')}),?\\s+(?:${months.join('|')}|${monthsShort.join('|')})\\s+\\d{1,2}(?:st|nd|rd|th)?(?:,?\\s+\\d{4})?\\s*$`, 'i'),
+                // "December 30th, 2024" or "Dec 30, 2024"
+                new RegExp(`^(?:${months.join('|')}|${monthsShort.join('|')})\\s+\\d{1,2}(?:st|nd|rd|th)?(?:,?\\s+\\d{4})?\\s*$`, 'i'),
+                // "12/30/2024" or "2024-12-30"
+                /^\d{1,2}\/\d{1,2}\/\d{2,4}\s*$/,
+                /^\d{4}-\d{2}-\d{2}\s*$/
+            ];
+
+            // Timestamp pattern: matches "10:23 AM", "3:45 PM", "14:30", etc.
+            const timestampPattern = /^(\d{1,2}:\d{2}(?:\s*(?:AM|PM|am|pm))?)\s*$/;
+
+            // Helper to parse date headers into a Date object
+            function parseDateHeader(line) {
+                const trimmed = line.trim();
+                const today = new Date();
+
+                if (/^today$/i.test(trimmed)) {
+                    return today;
+                }
+                if (/^yesterday$/i.test(trimmed)) {
+                    const d = new Date(today);
+                    d.setDate(d.getDate() - 1);
+                    return d;
+                }
+
+                // Try parsing various date formats
+                // Remove ordinal suffixes (st, nd, rd, th)
+                const cleaned = trimmed
+                    .replace(/(\d{1,2})(st|nd|rd|th)/gi, '$1')
+                    .replace(/,/g, '');
+
+                // Try to extract month and day
+                const monthDayMatch = cleaned.match(new RegExp(
+                    `(?:${days.join('|')})?\\s*(?:${months.join('|')}|${monthsShort.join('|')})\\s+(\\d{1,2})(?:\\s+(\\d{4}))?`,
+                    'i'
+                ));
+
+                if (monthDayMatch) {
+                    const monthStr = cleaned.match(new RegExp(`(${months.join('|')}|${monthsShort.join('|')})`, 'i'))?.[1];
+                    const day = parseInt(monthDayMatch[1]);
+                    const year = monthDayMatch[2] ? parseInt(monthDayMatch[2]) : today.getFullYear();
+
+                    let monthIndex = months.findIndex(m => m.toLowerCase() === monthStr?.toLowerCase());
+                    if (monthIndex === -1) {
+                        monthIndex = monthsShort.findIndex(m => m.toLowerCase() === monthStr?.toLowerCase());
+                    }
+
+                    if (monthIndex !== -1) {
+                        return new Date(year, monthIndex, day);
+                    }
+                }
+
+                // Try MM/DD/YYYY format
+                const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+                if (slashMatch) {
+                    let year = parseInt(slashMatch[3]);
+                    if (year < 100) year += 2000;
+                    return new Date(year, parseInt(slashMatch[1]) - 1, parseInt(slashMatch[2]));
+                }
+
+                // Try YYYY-MM-DD format
+                const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (isoMatch) {
+                    return new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]));
+                }
+
+                return null;
+            }
+
+            // Helper to check if a line is a date header
+            function isDateHeader(line) {
+                return datePatterns.some(p => p.test(line.trim()));
+            }
+
+            // Username pattern: line with just a display name
+            // Display names can have letters, numbers, spaces, hyphens, apostrophes, periods
+            const usernamePattern = /^([A-Za-z][A-Za-z0-9\s'\-\.]*[A-Za-z0-9])$/;
+
+            // Reaction pattern: emoji (unicode or :name:) followed by count
+            // Covers: emoticons, dingbats, symbols, misc symbols, transport, flags, etc.
+            const emojiRanges = '\\u{1F300}-\\u{1F9FF}\\u{1F600}-\\u{1F64F}\\u{1F680}-\\u{1F6FF}\\u{2600}-\\u{26FF}\\u{2700}-\\u{27BF}\\u{FE00}-\\u{FE0F}\\u{1F1E0}-\\u{1F1FF}\\u{200D}\\u{2764}\\u{1FA00}-\\u{1FAFF}';
+            // Slack emoji names can contain letters, numbers, +, -, _ (e.g., :+1:, :e-mail:, :100:)
+            const slackEmojiName = ':[\\w\\+\\-]+:';
+            const reactionPattern = new RegExp(`(?:[${emojiRanges}]+|${slackEmojiName})\\s*\\d+`, 'gu');
+
+            // Pattern for lines that are ONLY reactions (to skip entirely)
+            const reactionOnlyLinePattern = new RegExp(`^(\\s*(?:[${emojiRanges}]+|${slackEmojiName})\\s*\\d+\\s*)+$`, 'u');
+
+            // Thread indicator pattern
+            const threadPattern = /^(\d+)\s+repl(?:y|ies)\s*$/i;
+
+            // Image/file patterns to remove
+            const imagePatterns = [
+                /^https?:\/\/[^\s]+\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?[^\s]*)?\s*$/i,
+                /^https?:\/\/files\.slack\.com\/[^\s]+\s*$/i,
+                /^\[?image\]?\s*$/i,
+                /^Attachment\s*$/i
+            ];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmedLine = line.trim();
+
+                // Handle code blocks
+                if (trimmedLine.startsWith('```')) {
+                    if (inCodeBlock) {
+                        // End of code block
+                        codeBlockContent.push(line);
+                        if (currentMessage) {
+                            currentMessage.content.push(codeBlockContent.join('\n'));
+                        }
+                        codeBlockContent = [];
+                        inCodeBlock = false;
+                    } else {
+                        // Start of code block
+                        inCodeBlock = true;
+                        codeBlockContent = [line];
+                    }
+                    continue;
+                }
+
+                if (inCodeBlock) {
+                    codeBlockContent.push(line);
+                    continue;
+                }
+
+                // Skip empty lines between messages
+                if (!trimmedLine) {
+                    continue;
+                }
+
+                // Check for date headers (Today, Yesterday, Monday, December 30th, etc.)
+                if (isDateHeader(trimmedLine)) {
+                    const parsedDate = parseDateHeader(trimmedLine);
+                    if (parsedDate) {
+                        currentDate = parsedDate;
+                    }
+                    continue;
+                }
+
+                // Skip image/file lines
+                if (imagePatterns.some(p => p.test(trimmedLine))) {
+                    continue;
+                }
+
+                // Skip lines that are only reactions
+                if (reactionOnlyLinePattern.test(trimmedLine)) {
+                    continue;
+                }
+
+                // Check for system messages
+                const isSystemMessage = systemPatterns.some(p => p.test(trimmedLine));
+                if (isSystemMessage) {
+                    if (!includeSystemMessages.checked) {
+                        continue;
+                    }
+                    // Include system message as its own entry
+                    if (currentMessage && currentMessage.content.length > 0) {
+                        messages.push(currentMessage);
+                    }
+                    messages.push({
+                        username: null,
+                        timeString: null,
+                        dateContext: null,
+                        content: [`_${trimmedLine}_`],  // Italicize system messages
+                        threadCount: null,
+                        isSystem: true
+                    });
+                    currentMessage = null;
+                    continue;
+                }
+
+                // Check for timestamp line
+                const timestampMatch = trimmedLine.match(timestampPattern);
+                if (timestampMatch) {
+                    if (currentMessage) {
+                        currentMessage.timeString = timestampMatch[1];
+                        currentMessage.dateContext = currentDate;  // Store the date context
+                    }
+                    continue;
+                }
+
+                // Check for thread indicator
+                const threadMatch = trimmedLine.match(threadPattern);
+                if (threadMatch) {
+                    if (currentMessage) {
+                        currentMessage.threadCount = parseInt(threadMatch[1]);
+                    }
+                    continue;
+                }
+
+                // Check for username line (potential new message start)
+                const usernameMatch = trimmedLine.match(usernamePattern);
+                // A username line should be followed by a timestamp or content
+                const nextLine = lines[i + 1]?.trim() || '';
+                const nextIsTimestamp = timestampPattern.test(nextLine);
+                const nextIsEmpty = !nextLine;
+
+                if (usernameMatch && nextIsTimestamp) {
+                    // Save previous message
+                    if (currentMessage && currentMessage.content.length > 0) {
+                        messages.push(currentMessage);
+                    }
+                    // Start new message
+                    currentMessage = {
+                        username: usernameMatch[1].trim(),
+                        timeString: null,
+                        dateContext: currentDate,
+                        content: [],
+                        threadCount: null,
+                        isSystem: isSystemMessage
+                    };
+                    continue;
+                }
+
+                // This is message content
+                if (currentMessage) {
+                    // Remove reactions from line
+                    let cleanedLine = trimmedLine.replace(reactionPattern, '').trim();
+
+                    // Skip if line is only reactions
+                    if (!cleanedLine) {
+                        continue;
+                    }
+
+                    currentMessage.content.push(cleanedLine);
+                } else {
+                    // Content without a detected username - create anonymous message
+                    // This handles cases where the format isn't recognized
+                    let cleanedLine = trimmedLine.replace(reactionPattern, '').trim();
+                    if (cleanedLine) {
+                        currentMessage = {
+                            username: null,
+                            timeString: null,
+                            dateContext: currentDate,
+                            content: [cleanedLine],
+                            threadCount: null,
+                            isSystem: false
+                        };
+                    }
+                }
+            }
+
+            // Don't forget the last message
+            if (currentMessage && currentMessage.content.length > 0) {
+                messages.push(currentMessage);
+            }
+
+            // Helper to detect and format link unfurls as blockquotes
+            function formatLinkUnfurls(content) {
+                const lines = content.split('\n');
+                const urlPattern = /^https?:\/\/[^\s]+$/;
+                const slackUrlPattern = /^https?:\/\/[^\/]*slack\.com\//;
+
+                // Pattern for unfurl end markers
+                const unfurlEndPattern = /^(Thread|Posted) in .+ \| .+ \| View message$/i;
+
+                // Find all URL lines and their positions
+                const urlPositions = [];
+                for (let i = 0; i < lines.length; i++) {
+                    if (urlPattern.test(lines[i].trim())) {
+                        urlPositions.push({ index: i, url: lines[i].trim() });
+                    }
+                }
+
+                const processedRanges = [];
+
+                // Heuristic 1: Duplicate URLs (external link unfurls)
+                for (let i = 0; i < urlPositions.length; i++) {
+                    for (let j = i + 1; j < urlPositions.length; j++) {
+                        const url1 = urlPositions[i].url;
+                        const url2 = urlPositions[j].url;
+                        if (url1 === url2 || url1.replace(/\/$/, '') === url2.replace(/\/$/, '')) {
+                            processedRanges.push({
+                                start: urlPositions[i].index,
+                                end: urlPositions[j].index,
+                                type: 'duplicate-url'
+                            });
+                        }
+                    }
+                }
+
+                // Heuristic 2: Slack thread/cross-post unfurls
+                // Look for "Thread in X | Date | View message" or "Posted in X | Date | View message"
+                // Also detect "Anonymous Question" headers for cross-posted anonymous content
+                const anonQuestionPattern = /^Anonymous Question$/i;
+
+                for (let i = 0; i < lines.length; i++) {
+                    if (unfurlEndPattern.test(lines[i].trim())) {
+                        // Found an unfurl end marker - look backwards for the start
+                        let startIndex = -1;
+
+                        // Look backwards for start indicators
+                        for (let j = i - 1; j >= 0; j--) {
+                            const prevLine = lines[j].trim();
+
+                            // If we hit a Slack URL, unfurl starts after it
+                            if (slackUrlPattern.test(prevLine)) {
+                                startIndex = j + 1;
+                                break;
+                            }
+
+                            // If we hit any URL, unfurl starts after it
+                            if (urlPattern.test(prevLine)) {
+                                startIndex = j + 1;
+                                break;
+                            }
+
+                            // If we hit "Anonymous Question", that's the start
+                            if (anonQuestionPattern.test(prevLine)) {
+                                startIndex = j;
+                                break;
+                            }
+                        }
+
+                        if (startIndex !== -1 && startIndex < i) {
+                            // Check this range isn't already covered
+                            const alreadyCovered = processedRanges.some(r =>
+                                r.start <= startIndex && r.end >= i
+                            );
+                            if (!alreadyCovered) {
+                                processedRanges.push({
+                                    start: startIndex,
+                                    end: i,
+                                    type: 'thread-unfurl'
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // If no unfurls detected, return as-is
+                if (processedRanges.length === 0) {
+                    return content;
+                }
+
+                // Sort ranges by start index
+                processedRanges.sort((a, b) => a.start - b.start);
+
+                // Format unfurl content as blockquotes
+                const result = [];
+                let currentRangeIdx = 0;
+                let inUnfurl = false;
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const range = processedRanges[currentRangeIdx];
+
+                    // Check if we're entering a new unfurl range
+                    if (range && i === range.start) {
+                        inUnfurl = true;
+                    }
+
+                    // Check if we're at the end of unfurl
+                    if (range && i === range.end) {
+                        if (range.type === 'duplicate-url') {
+                            // Skip the duplicate URL
+                            inUnfurl = false;
+                            currentRangeIdx++;
+                            continue;
+                        } else {
+                            // Include the end marker but as blockquote
+                            result.push(`> ${line}`);
+                            inUnfurl = false;
+                            currentRangeIdx++;
+                            continue;
+                        }
+                    }
+
+                    // If in unfurl, prefix with >
+                    if (inUnfurl) {
+                        result.push(`> ${line}`);
+                    } else {
+                        result.push(line);
+                    }
+                }
+
+                return result.join('\n');
+            }
+
+            // Helper to format timestamp based on selected format
+            function formatTimestamp(timeString, dateContext) {
+                if (!timeString) return null;
+
+                const format = timestampFormat.value;
+
+                // Parse the time string (e.g., "10:23 AM", "14:30")
+                let hours, minutes;
+                const time12Match = timeString.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?/);
+                if (time12Match) {
+                    hours = parseInt(time12Match[1]);
+                    minutes = parseInt(time12Match[2]);
+                    const ampm = time12Match[3]?.toUpperCase();
+                    if (ampm === 'PM' && hours !== 12) hours += 12;
+                    if (ampm === 'AM' && hours === 12) hours = 0;
+                } else {
+                    return timeString;  // Couldn't parse, return as-is
+                }
+
+                // For time-only format, just return the original time string
+                if (format === 'time-only') {
+                    return timeString;
+                }
+
+                // Build a full Date object if we have date context
+                let date = dateContext || new Date();
+                date = new Date(date);  // Clone to avoid mutation
+                date.setHours(hours, minutes, 0, 0);
+
+                if (format === 'iso') {
+                    // YYYY-MM-DDTHH:MM
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const h = String(date.getHours()).padStart(2, '0');
+                    const m = String(date.getMinutes()).padStart(2, '0');
+                    return `${year}-${month}-${day}T${h}:${m}`;
+                }
+
+                if (format === 'friendly') {
+                    // Dec 30, 2:30 PM
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const month = monthNames[date.getMonth()];
+                    const day = date.getDate();
+                    const h = date.getHours();
+                    const m = String(date.getMinutes()).padStart(2, '0');
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    const h12 = h % 12 || 12;
+                    return `${month} ${day}, ${h12}:${m} ${ampm}`;
+                }
+
+                return timeString;
+            }
+
+            // Format output
+            const outputLines = [];
+            for (const msg of messages) {
+                let line = '';
+
+                // Add timestamp if enabled
+                if (includeTimestamps.checked && msg.timeString) {
+                    const formattedTime = formatTimestamp(msg.timeString, msg.dateContext);
+                    if (formattedTime) {
+                        line += `[${formattedTime}] `;
+                    }
+                }
+
+                // Add username prefix
+                if (msg.username) {
+                    line += `@${msg.username}: `;
+                }
+
+                // Process and add content
+                let content = msg.content.join('\n');
+                content = formatLinkUnfurls(content);
+                content = convertSlackFormatting(content);
+                line += content;
+
+                outputLines.push(line);
+
+                // Add thread indicator
+                if (msg.threadCount) {
+                    outputLines.push(`[thread: ${msg.threadCount} ${msg.threadCount === 1 ? 'reply' : 'replies'}]`);
+                }
+
+                // Add blank line between messages
+                outputLines.push('');
+            }
+
+            // Remove trailing blank line
+            while (outputLines.length > 0 && !outputLines[outputLines.length - 1]) {
+                outputLines.pop();
+            }
+
+            return outputLines.join('\n');
+        }
+
+        function convertSlackFormatting(text) {
+            // Don't process inside code blocks
+            const codeBlockRegex = /```[\s\S]*?```/g;
+            const inlineCodeRegex = /`[^`]+`/g;
+
+            // Extract and protect code blocks
+            const codeBlocks = [];
+            text = text.replace(codeBlockRegex, (match) => {
+                codeBlocks.push(match);
+                return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+            });
+
+            // Extract and protect inline code
+            const inlineCodes = [];
+            text = text.replace(inlineCodeRegex, (match) => {
+                inlineCodes.push(match);
+                return `__INLINE_CODE_${inlineCodes.length - 1}__`;
+            });
+
+            // Convert Slack links: <url|display> or <url>
+            text = text.replace(/<(https?:\/\/[^|>]+)\|([^>]+)>/g, '[$2]($1)');
+            text = text.replace(/<(https?:\/\/[^>]+)>/g, '$1');
+
+            // Convert *bold* to **bold** (but not inside code)
+            // Match *word* patterns but not ** which is already bold
+            text = text.replace(/(?<!\*)\*([^\s*][^*]*[^\s*])\*(?!\*)/g, '**$1**');
+            text = text.replace(/(?<!\*)\*([^\s*])\*(?!\*)/g, '**$1**');
+
+            // Convert ~strikethrough~ to ~~strikethrough~~
+            text = text.replace(/(?<!~)~([^\s~][^~]*[^\s~])~(?!~)/g, '~~$1~~');
+            text = text.replace(/(?<!~)~([^\s~])~(?!~)/g, '~~$1~~');
+
+            // _italic_ stays the same in markdown
+
+            // Restore inline code
+            inlineCodes.forEach((code, i) => {
+                text = text.replace(`__INLINE_CODE_${i}__`, code);
+            });
+
+            // Restore code blocks
+            codeBlocks.forEach((block, i) => {
+                text = text.replace(`__CODE_BLOCK_${i}__`, block);
+            });
+
+            return text;
+        }
+
+        function copyToClipboard() {
+            const text = outputEl.textContent;
+            if (outputEl.classList.contains('empty')) {
+                return;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                copyBtn.classList.add('success');
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+
+        function clearAll() {
+            inputEl.value = '';
+            outputEl.textContent = 'Cleaned output will appear here';
+            outputEl.classList.add('empty');
+            statsEl.textContent = '';
+            includeTimestamps.checked = false;
+            timestampFormat.value = 'iso';
+            timestampFormatLabel.style.display = 'none';
+            includeSystemMessages.checked = false;
+        }
+    </script>
+</body>
+</html>
