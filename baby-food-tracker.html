@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baby Food Tracker - Locally Optimal Tools</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+            font-size: 1.3em;
+        }
+        .intro {
+            background: #f6f8fa;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+        .intro p {
+            margin: 8px 0;
+        }
+        .intro a {
+            color: #0366d6;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e1e4e8;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            color: #586069;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .tab:hover {
+            color: #24292e;
+        }
+        .tab.active {
+            color: #0366d6;
+            border-bottom-color: #0366d6;
+            font-weight: 500;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Calendar */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .calendar-nav button {
+            background: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .calendar-nav button:hover {
+            background: #e1e4e8;
+        }
+        .calendar-month {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-day-header {
+            text-align: center;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #586069;
+            padding: 8px 0;
+        }
+        .calendar-day {
+            min-height: 80px;
+            border: 1px solid #e1e4e8;
+            border-radius: 4px;
+            padding: 4px;
+            font-size: 0.85em;
+            background: #fff;
+            cursor: pointer;
+            position: relative;
+        }
+        .calendar-day:hover {
+            background: #f6f8fa;
+        }
+        .calendar-day.other-month {
+            background: #fafbfc;
+            color: #959da5;
+        }
+        .calendar-day.today {
+            border-color: #0366d6;
+            border-width: 2px;
+        }
+        .calendar-day.has-entries {
+            background: #f0fff4;
+        }
+        .calendar-day-number {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .calendar-day-foods {
+            font-size: 0.8em;
+            color: #24292e;
+        }
+        .calendar-day-food {
+            display: inline-block;
+            background: #e1e4e8;
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        .calendar-day-food.allergen {
+            background: #fff5f5;
+            color: #c53030;
+        }
+        .calendar-day-more {
+            font-size: 0.75em;
+            color: #586069;
+        }
+
+        /* Entry Form */
+        .entry-form {
+            background: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        .form-group.full-width {
+            flex-basis: 100%;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #0366d6;
+        }
+        .form-group small {
+            color: #6a737d;
+            font-size: 0.85em;
+            display: block;
+            margin-top: 4px;
+        }
+
+        /* Photo input */
+        .photo-preview {
+            margin-top: 10px;
+        }
+        .photo-preview img {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 4px;
+            border: 1px solid #e1e4e8;
+        }
+        .photo-remove {
+            display: inline-block;
+            margin-left: 10px;
+            color: #d73a49;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        /* Buttons */
+        button.primary {
+            background: #0366d6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        button.primary:hover {
+            background: #0256c7;
+        }
+        button.secondary {
+            background: #fafbfc;
+            color: #24292e;
+            border: 1px solid #e1e4e8;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button.secondary:hover {
+            background: #f3f4f6;
+        }
+        button.danger {
+            background: #d73a49;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button.danger:hover {
+            background: #c53030;
+        }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Suggestions */
+        .suggestions-section {
+            margin-top: 30px;
+        }
+        .suggestion-card {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+        .suggestion-card:hover {
+            background: #f6f8fa;
+        }
+        .suggestion-rank {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #0366d6;
+            margin-right: 15px;
+            min-width: 30px;
+        }
+        .suggestion-content {
+            flex: 1;
+        }
+        .suggestion-food {
+            font-weight: 600;
+            font-size: 1.05em;
+            margin-bottom: 4px;
+        }
+        .suggestion-reason {
+            font-size: 0.9em;
+            color: #586069;
+        }
+        .suggestion-category {
+            display: inline-block;
+            font-size: 0.8em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 5px;
+        }
+        .category-allergen {
+            background: #fff5f5;
+            color: #c53030;
+        }
+        .category-iron {
+            background: #fef3cd;
+            color: #856404;
+        }
+        .category-fruit {
+            background: #d4edda;
+            color: #155724;
+        }
+        .category-vegetable {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .category-protein {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .category-grain {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .category-dairy {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        .add-suggestion-btn {
+            background: none;
+            border: 1px solid #0366d6;
+            color: #0366d6;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 8px;
+        }
+        .add-suggestion-btn:hover {
+            background: #0366d6;
+            color: white;
+        }
+
+        /* Food History */
+        .history-section {
+            margin-top: 20px;
+        }
+        .history-item {
+            padding: 15px;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+        .history-date {
+            font-weight: 600;
+            color: #24292e;
+            margin-bottom: 8px;
+        }
+        .history-food {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #f6f8fa;
+            border-radius: 4px;
+            margin-right: 8px;
+            margin-bottom: 5px;
+        }
+        .history-food.allergen {
+            background: #fff5f5;
+            color: #c53030;
+        }
+        .history-notes {
+            font-size: 0.9em;
+            color: #586069;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .history-photo {
+            margin-top: 10px;
+        }
+        .history-photo img {
+            max-width: 150px;
+            max-height: 100px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .history-actions {
+            margin-top: 10px;
+        }
+        .history-delete {
+            color: #d73a49;
+            cursor: pointer;
+            font-size: 0.85em;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .history-delete:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal h3 {
+            margin-top: 0;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* Photo modal */
+        .photo-modal img {
+            max-width: 100%;
+            max-height: 70vh;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: #f6f8fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #24292e;
+        }
+        .stat-label {
+            font-size: 0.85em;
+            color: #586069;
+        }
+
+        /* Guidelines */
+        .guidelines {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .guidelines h4 {
+            margin: 0 0 10px 0;
+            color: #f57c00;
+        }
+        .guidelines ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .guidelines li {
+            margin: 5px 0;
+        }
+
+        /* Data management */
+        .data-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #586069;
+        }
+        footer a {
+            color: #0366d6;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+                margin: 20px auto;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .calendar-day {
+                min-height: 60px;
+                font-size: 0.75em;
+            }
+            .calendar-day-food {
+                display: none;
+            }
+            .calendar-day.has-entries::after {
+                content: '';
+                display: block;
+                width: 6px;
+                height: 6px;
+                background: #28a745;
+                border-radius: 50%;
+                margin: 2px auto;
+            }
+            .tabs {
+                flex-wrap: wrap;
+            }
+            .tab {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            .form-row {
+                flex-direction: column;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Baby Food Tracker</h1>
+
+    <div class="intro">
+        <p>Track your baby's solid food journey with this evidence-based tool. Log new foods, add notes, and get personalized suggestions for what to introduce next.</p>
+        <p><em>Based on <a href="https://solidstarts.com/" target="_blank">Solid Starts</a> and <a href="https://www.aap.org/en/patient-care/healthy-active-living-for-families/infant-food-and-feeding/" target="_blank">AAP guidelines</a>. All data stored locally in your browser.</em></p>
+    </div>
+
+    <div class="guidelines">
+        <h4>Key Guidelines (AAP & Solid Starts)</h4>
+        <ul>
+            <li><strong>Start around 6 months</strong> when baby shows signs of readiness</li>
+            <li><strong>Introduce allergens early</strong> - eggs, peanuts, dairy, fish, tree nuts, wheat, soy, sesame</li>
+            <li><strong>Prioritize iron-rich foods</strong> - meat, eggs, beans, fortified cereals</li>
+            <li><strong>Avoid</strong>: honey (until 12 months), whole nuts, added salt/sugar, cow's milk as drink</li>
+        </ul>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="calendar">Calendar</button>
+        <button class="tab" data-tab="add">Add Entry</button>
+        <button class="tab" data-tab="suggestions">Suggestions</button>
+        <button class="tab" data-tab="history">All Foods</button>
+    </div>
+
+    <!-- Calendar Tab -->
+    <div id="calendar-tab" class="tab-content active">
+        <div class="calendar-header">
+            <div class="calendar-nav">
+                <button onclick="changeMonth(-1)">&larr; Prev</button>
+                <span class="calendar-month" id="calendarMonth">January 2025</span>
+                <button onclick="changeMonth(1)">Next &rarr;</button>
+            </div>
+            <button class="secondary" onclick="goToToday()">Today</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- Calendar generated by JS -->
+        </div>
+    </div>
+
+    <!-- Add Entry Tab -->
+    <div id="add-tab" class="tab-content">
+        <div class="entry-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="entryDate">Date</label>
+                    <input type="date" id="entryDate">
+                </div>
+                <div class="form-group">
+                    <label for="foodSelect">Food</label>
+                    <select id="foodSelect">
+                        <option value="">-- Select a food --</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="customFood">Or enter custom food</label>
+                    <input type="text" id="customFood" placeholder="e.g., Homemade hummus">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="entryNotes">Notes (optional)</label>
+                    <textarea id="entryNotes" placeholder="How did it go? Any reactions? Did baby like it?"></textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="entryPhoto">Photo (optional)</label>
+                    <input type="file" id="entryPhoto" accept="image/*">
+                    <small>Photos stored locally, may increase storage usage</small>
+                    <div class="photo-preview" id="photoPreview"></div>
+                </div>
+            </div>
+            <div class="button-row">
+                <button class="primary" onclick="addEntry()">Add Entry</button>
+                <button class="secondary" onclick="clearForm()">Clear Form</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suggestions Tab -->
+    <div id="suggestions-tab" class="tab-content">
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats generated by JS -->
+        </div>
+        <h3>Next Foods to Try</h3>
+        <p>Based on AAP guidelines, here are suggested foods prioritizing allergens and iron-rich options you haven't tried yet:</p>
+        <div id="suggestionsList">
+            <!-- Suggestions generated by JS -->
+        </div>
+    </div>
+
+    <!-- History Tab -->
+    <div id="history-tab" class="tab-content">
+        <h3>All Introduced Foods</h3>
+        <div id="historyList">
+            <!-- History generated by JS -->
+        </div>
+
+        <div class="data-section">
+            <h3>Data Management</h3>
+            <p>Your data is stored locally in your browser. Export to save a backup, or clear all data to start fresh.</p>
+            <div class="button-row">
+                <button class="secondary" onclick="exportData()">Export Data</button>
+                <button class="secondary" onclick="importDataPrompt()">Import Data</button>
+                <button class="danger" onclick="clearAllData()">Clear All Data</button>
+            </div>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+    </div>
+
+    <!-- Day Detail Modal -->
+    <div class="modal-overlay" id="dayModal">
+        <div class="modal">
+            <h3 id="dayModalTitle">January 1, 2025</h3>
+            <div id="dayModalContent">
+                <!-- Content generated by JS -->
+            </div>
+            <div class="modal-actions">
+                <button class="secondary" onclick="closeDayModal()">Close</button>
+                <button class="primary" onclick="addEntryForDay()">Add Entry</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Modal -->
+    <div class="modal-overlay" id="photoModal">
+        <div class="modal photo-modal">
+            <img id="photoModalImg" src="" alt="Food photo">
+            <div class="modal-actions">
+                <button class="secondary" onclick="closePhotoModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p><a href="index.html">&larr; Back to tools</a></p>
+        <p><small>Guidelines based on <a href="https://solidstarts.com/" target="_blank">Solid Starts</a> and <a href="https://www.healthychildren.org/English/ages-stages/baby/feeding-nutrition/Pages/Starting-Solid-Foods.aspx" target="_blank">AAP HealthyChildren.org</a>. This tool is for informational purposes only and does not constitute medical advice. Consult your pediatrician for personalized guidance.</small></p>
+    </footer>
+
+    <script>
+        // Food database with categories and properties
+        const FOOD_DATABASE = {
+            // Top 9 Allergens (prioritized for early introduction per AAP guidelines)
+            allergens: [
+                { name: 'Peanut butter (thinned)', category: 'allergen', isAllergen: true, ironRich: false, reason: 'Top allergen - early introduction recommended by AAP' },
+                { name: 'Egg (well-cooked)', category: 'allergen', isAllergen: true, ironRich: true, reason: 'Top allergen + iron-rich' },
+                { name: 'Cow\'s milk yogurt', category: 'allergen', isAllergen: true, ironRich: false, reason: 'Dairy allergen - yogurt is safe before 12 months' },
+                { name: 'Wheat (pasta/bread)', category: 'allergen', isAllergen: true, ironRich: false, reason: 'Top allergen - introduce early' },
+                { name: 'Soy (tofu/edamame)', category: 'allergen', isAllergen: true, ironRich: true, reason: 'Top allergen + plant protein' },
+                { name: 'Fish (salmon)', category: 'allergen', isAllergen: true, ironRich: true, reason: 'Top allergen + omega-3s + iron' },
+                { name: 'Shellfish (shrimp)', category: 'allergen', isAllergen: true, ironRich: true, reason: 'Top allergen + iron-rich' },
+                { name: 'Tree nuts (almond butter)', category: 'allergen', isAllergen: true, ironRich: false, reason: 'Top allergen - thin with water/milk' },
+                { name: 'Sesame (tahini)', category: 'allergen', isAllergen: true, ironRich: true, reason: 'Top allergen + iron-rich' },
+            ],
+            // Iron-rich foods (priority after 6 months per AAP)
+            ironRich: [
+                { name: 'Beef (ground/pureed)', category: 'protein', isAllergen: false, ironRich: true, reason: 'Excellent iron source - babies need 11mg/day at 6mo' },
+                { name: 'Chicken (shredded)', category: 'protein', isAllergen: false, ironRich: true, reason: 'Good iron + protein source' },
+                { name: 'Turkey', category: 'protein', isAllergen: false, ironRich: true, reason: 'Iron-rich poultry option' },
+                { name: 'Lamb', category: 'protein', isAllergen: false, ironRich: true, reason: 'Excellent iron source' },
+                { name: 'Lentils', category: 'protein', isAllergen: false, ironRich: true, reason: 'Plant-based iron + protein' },
+                { name: 'Black beans', category: 'protein', isAllergen: false, ironRich: true, reason: 'Iron + fiber + protein' },
+                { name: 'Chickpeas', category: 'protein', isAllergen: false, ironRich: true, reason: 'Versatile iron-rich legume' },
+                { name: 'Fortified infant cereal', category: 'grain', isAllergen: false, ironRich: true, reason: 'Easy way to boost iron intake' },
+                { name: 'Spinach', category: 'vegetable', isAllergen: false, ironRich: true, reason: 'Iron + vitamins (pair with vitamin C)' },
+            ],
+            // Fruits
+            fruits: [
+                { name: 'Avocado', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Healthy fats for brain development' },
+                { name: 'Banana', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Easy first food - potassium rich' },
+                { name: 'Mango', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Vitamin C helps iron absorption' },
+                { name: 'Peach', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Soft texture, vitamin C' },
+                { name: 'Pear', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Gentle on digestion' },
+                { name: 'Apple (cooked)', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Cook until soft for safety' },
+                { name: 'Blueberries (mashed)', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Antioxidants - mash or quarter' },
+                { name: 'Strawberries', category: 'fruit', isAllergen: false, ironRich: false, reason: 'High vitamin C' },
+                { name: 'Watermelon', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Hydrating, easy to gum' },
+                { name: 'Kiwi', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Very high in vitamin C' },
+                { name: 'Papaya', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Digestive enzymes' },
+                { name: 'Plum', category: 'fruit', isAllergen: false, ironRich: false, reason: 'Helps with constipation' },
+            ],
+            // Vegetables
+            vegetables: [
+                { name: 'Sweet potato', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Vitamin A, naturally sweet' },
+                { name: 'Butternut squash', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Vitamin A, easy to puree' },
+                { name: 'Carrot (cooked)', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Beta-carotene, must be soft' },
+                { name: 'Broccoli', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Vitamin C, calcium' },
+                { name: 'Green beans', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Fiber, easy to hold' },
+                { name: 'Peas', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Protein, mash for young babies' },
+                { name: 'Zucchini', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Mild flavor, soft texture' },
+                { name: 'Cauliflower', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Mild, versatile' },
+                { name: 'Asparagus', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Natural finger food shape' },
+                { name: 'Beets', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Nutrients, naturally sweet' },
+                { name: 'Bell pepper (cooked)', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Vitamin C, colorful' },
+                { name: 'Cucumber', category: 'vegetable', isAllergen: false, ironRich: false, reason: 'Hydrating, good for teething' },
+            ],
+            // Grains
+            grains: [
+                { name: 'Oatmeal', category: 'grain', isAllergen: false, ironRich: true, reason: 'Fiber, often fortified with iron' },
+                { name: 'Rice (well-cooked)', category: 'grain', isAllergen: false, ironRich: false, reason: 'Easy to digest' },
+                { name: 'Quinoa', category: 'grain', isAllergen: false, ironRich: true, reason: 'Complete protein, iron' },
+                { name: 'Barley', category: 'grain', isAllergen: false, ironRich: false, reason: 'Fiber-rich grain' },
+            ],
+            // Dairy (non-allergen entries)
+            dairy: [
+                { name: 'Cheese (soft)', category: 'dairy', isAllergen: true, ironRich: false, reason: 'Calcium, protein - avoid choking hazards' },
+                { name: 'Cottage cheese', category: 'dairy', isAllergen: true, ironRich: false, reason: 'Protein, easy texture' },
+                { name: 'Greek yogurt', category: 'dairy', isAllergen: true, ironRich: false, reason: 'High protein, probiotics' },
+            ],
+        };
+
+        // Flatten food database for easy access
+        const ALL_FOODS = [
+            ...FOOD_DATABASE.allergens,
+            ...FOOD_DATABASE.ironRich,
+            ...FOOD_DATABASE.fruits,
+            ...FOOD_DATABASE.vegetables,
+            ...FOOD_DATABASE.grains,
+            ...FOOD_DATABASE.dairy,
+        ];
+
+        // Remove duplicates (some foods appear in multiple categories)
+        const UNIQUE_FOODS = ALL_FOODS.filter((food, index, self) =>
+            index === self.findIndex(f => f.name === food.name)
+        );
+
+        // State
+        let currentDate = new Date();
+        let selectedDayDate = null;
+        let photoDataUrl = null;
+
+        // LocalStorage key
+        const STORAGE_KEY = 'babyFoodTracker';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            populateFoodSelect();
+            setupTabs();
+            setupPhotoInput();
+            setDefaultDate();
+            renderCalendar();
+            renderSuggestions();
+            renderHistory();
+        });
+
+        // Data functions
+        function getData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : { entries: [] };
+        }
+
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // Populate food dropdown
+        function populateFoodSelect() {
+            const select = document.getElementById('foodSelect');
+            const categories = {
+                'Top Allergens (introduce early)': FOOD_DATABASE.allergens,
+                'Iron-Rich Foods': FOOD_DATABASE.ironRich.filter(f => !FOOD_DATABASE.allergens.find(a => a.name === f.name)),
+                'Fruits': FOOD_DATABASE.fruits,
+                'Vegetables': FOOD_DATABASE.vegetables,
+                'Grains': FOOD_DATABASE.grains.filter(f => !FOOD_DATABASE.ironRich.find(i => i.name === f.name)),
+                'Dairy': FOOD_DATABASE.dairy.filter(f => !FOOD_DATABASE.allergens.find(a => a.name === f.name)),
+            };
+
+            for (const [category, foods] of Object.entries(categories)) {
+                if (foods.length === 0) continue;
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = category;
+                foods.forEach(food => {
+                    const option = document.createElement('option');
+                    option.value = food.name;
+                    option.textContent = food.name + (food.isAllergen ? ' *' : '');
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+        }
+
+        // Tab navigation
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+
+                    // Refresh content when switching tabs
+                    if (tab.dataset.tab === 'calendar') renderCalendar();
+                    if (tab.dataset.tab === 'suggestions') renderSuggestions();
+                    if (tab.dataset.tab === 'history') renderHistory();
+                });
+            });
+        }
+
+        // Photo handling
+        function setupPhotoInput() {
+            document.getElementById('entryPhoto').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        photoDataUrl = event.target.result;
+                        document.getElementById('photoPreview').innerHTML = `
+                            <img src="${photoDataUrl}" alt="Preview">
+                            <span class="photo-remove" onclick="removePhoto()">Remove</span>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function removePhoto() {
+            photoDataUrl = null;
+            document.getElementById('entryPhoto').value = '';
+            document.getElementById('photoPreview').innerHTML = '';
+        }
+
+        // Set default date to today
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('entryDate').value = today;
+        }
+
+        // Calendar functions
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            // Update header
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('calendarMonth').textContent = `${monthNames[month]} ${year}`;
+
+            // Clear grid
+            grid.innerHTML = '';
+
+            // Day headers
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayNames.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-day-header';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+
+            // Get first day of month and total days
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+            // Get entries for this month
+            const data = getData();
+            const today = new Date();
+
+            // Previous month days
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const day = daysInPrevMonth - i;
+                const dateStr = formatDateStr(year, month - 1, day);
+                const dayEntries = getEntriesForDate(data, dateStr);
+                createCalendarDay(grid, day, dateStr, dayEntries, true, false);
+            }
+
+            // Current month days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = formatDateStr(year, month, day);
+                const dayEntries = getEntriesForDate(data, dateStr);
+                const isToday = year === today.getFullYear() &&
+                               month === today.getMonth() &&
+                               day === today.getDate();
+                createCalendarDay(grid, day, dateStr, dayEntries, false, isToday);
+            }
+
+            // Next month days
+            const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+            const remainingCells = totalCells - (firstDay + daysInMonth);
+            for (let day = 1; day <= remainingCells; day++) {
+                const dateStr = formatDateStr(year, month + 1, day);
+                const dayEntries = getEntriesForDate(data, dateStr);
+                createCalendarDay(grid, day, dateStr, dayEntries, true, false);
+            }
+        }
+
+        function createCalendarDay(grid, day, dateStr, entries, isOtherMonth, isToday) {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'calendar-day';
+            if (isOtherMonth) dayEl.classList.add('other-month');
+            if (isToday) dayEl.classList.add('today');
+            if (entries.length > 0) dayEl.classList.add('has-entries');
+
+            dayEl.innerHTML = `<div class="calendar-day-number">${day}</div>`;
+
+            if (entries.length > 0) {
+                const foodsDiv = document.createElement('div');
+                foodsDiv.className = 'calendar-day-foods';
+
+                const maxShow = 2;
+                entries.slice(0, maxShow).forEach(entry => {
+                    const foodSpan = document.createElement('span');
+                    foodSpan.className = 'calendar-day-food';
+                    const foodInfo = UNIQUE_FOODS.find(f => f.name === entry.food);
+                    if (foodInfo && foodInfo.isAllergen) {
+                        foodSpan.classList.add('allergen');
+                    }
+                    foodSpan.textContent = entry.food.split(' ')[0]; // Just first word
+                    foodsDiv.appendChild(foodSpan);
+                });
+
+                if (entries.length > maxShow) {
+                    const moreSpan = document.createElement('div');
+                    moreSpan.className = 'calendar-day-more';
+                    moreSpan.textContent = `+${entries.length - maxShow} more`;
+                    foodsDiv.appendChild(moreSpan);
+                }
+
+                dayEl.appendChild(foodsDiv);
+            }
+
+            dayEl.addEventListener('click', () => openDayModal(dateStr));
+            grid.appendChild(dayEl);
+        }
+
+        function formatDateStr(year, month, day) {
+            // Handle month overflow/underflow
+            const date = new Date(year, month, day);
+            return date.toISOString().split('T')[0];
+        }
+
+        function getEntriesForDate(data, dateStr) {
+            return data.entries.filter(e => e.date === dateStr);
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function goToToday() {
+            currentDate = new Date();
+            renderCalendar();
+        }
+
+        // Day modal
+        function openDayModal(dateStr) {
+            selectedDayDate = dateStr;
+            const date = new Date(dateStr + 'T12:00:00');
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('dayModalTitle').textContent = date.toLocaleDateString('en-US', options);
+
+            const data = getData();
+            const entries = getEntriesForDate(data, dateStr);
+            const content = document.getElementById('dayModalContent');
+
+            if (entries.length === 0) {
+                content.innerHTML = '<p>No foods logged for this day.</p>';
+            } else {
+                content.innerHTML = entries.map((entry, idx) => {
+                    const foodInfo = UNIQUE_FOODS.find(f => f.name === entry.food);
+                    const isAllergen = foodInfo && foodInfo.isAllergen;
+                    return `
+                        <div class="history-item">
+                            <span class="history-food${isAllergen ? ' allergen' : ''}">${entry.food}</span>
+                            ${entry.notes ? `<div class="history-notes">${escapeHtml(entry.notes)}</div>` : ''}
+                            ${entry.photo ? `<div class="history-photo"><img src="${entry.photo}" onclick="openPhotoModal('${entry.photo}')" alt="Food photo"></div>` : ''}
+                            <div class="history-actions">
+                                <button class="history-delete" onclick="deleteEntry('${dateStr}', ${idx})">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('dayModal').classList.add('active');
+        }
+
+        function closeDayModal() {
+            document.getElementById('dayModal').classList.remove('active');
+            selectedDayDate = null;
+        }
+
+        function addEntryForDay() {
+            closeDayModal();
+            if (selectedDayDate) {
+                document.getElementById('entryDate').value = selectedDayDate;
+            }
+            // Switch to add tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('[data-tab="add"]').classList.add('active');
+            document.getElementById('add-tab').classList.add('active');
+        }
+
+        // Photo modal
+        function openPhotoModal(src) {
+            document.getElementById('photoModalImg').src = src;
+            document.getElementById('photoModal').classList.add('active');
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photoModal').classList.remove('active');
+        }
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Add entry
+        function addEntry() {
+            const date = document.getElementById('entryDate').value;
+            const foodSelect = document.getElementById('foodSelect').value;
+            const customFood = document.getElementById('customFood').value.trim();
+            const notes = document.getElementById('entryNotes').value.trim();
+
+            const food = customFood || foodSelect;
+
+            if (!date) {
+                alert('Please select a date.');
+                return;
+            }
+
+            if (!food) {
+                alert('Please select or enter a food.');
+                return;
+            }
+
+            const data = getData();
+            data.entries.push({
+                date,
+                food,
+                notes,
+                photo: photoDataUrl,
+                timestamp: new Date().toISOString()
+            });
+            saveData(data);
+
+            clearForm();
+
+            // Switch to calendar and show the month of the entry
+            const entryDate = new Date(date + 'T12:00:00');
+            currentDate = new Date(entryDate);
+
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('[data-tab="calendar"]').classList.add('active');
+            document.getElementById('calendar-tab').classList.add('active');
+
+            renderCalendar();
+            alert('Entry added successfully!');
+        }
+
+        function clearForm() {
+            document.getElementById('foodSelect').value = '';
+            document.getElementById('customFood').value = '';
+            document.getElementById('entryNotes').value = '';
+            removePhoto();
+            setDefaultDate();
+        }
+
+        // Delete entry
+        function deleteEntry(dateStr, index) {
+            if (!confirm('Delete this entry?')) return;
+
+            const data = getData();
+            const dateEntries = data.entries.filter(e => e.date === dateStr);
+            const entryToDelete = dateEntries[index];
+
+            if (entryToDelete) {
+                const globalIndex = data.entries.findIndex(e =>
+                    e.date === entryToDelete.date &&
+                    e.food === entryToDelete.food &&
+                    e.timestamp === entryToDelete.timestamp
+                );
+                if (globalIndex !== -1) {
+                    data.entries.splice(globalIndex, 1);
+                    saveData(data);
+
+                    // Refresh views
+                    if (selectedDayDate) {
+                        openDayModal(selectedDayDate);
+                    }
+                    renderCalendar();
+                    renderHistory();
+                    renderSuggestions();
+                }
+            }
+        }
+
+        // Suggestions
+        function renderSuggestions() {
+            const data = getData();
+            const introducedFoods = new Set(data.entries.map(e => e.food));
+
+            // Calculate stats
+            const uniqueFoods = introducedFoods.size;
+            const allergensTried = FOOD_DATABASE.allergens.filter(a => introducedFoods.has(a.name)).length;
+            const totalAllergens = FOOD_DATABASE.allergens.length;
+            const ironFoodsTried = UNIQUE_FOODS.filter(f => f.ironRich && introducedFoods.has(f.name)).length;
+
+            // Render stats
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${uniqueFoods}</div>
+                    <div class="stat-label">Foods Introduced</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${allergensTried}/${totalAllergens}</div>
+                    <div class="stat-label">Allergens Tried</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${ironFoodsTried}</div>
+                    <div class="stat-label">Iron-Rich Foods</div>
+                </div>
+            `;
+
+            // Generate suggestions (prioritize: allergens > iron-rich > variety)
+            const suggestions = [];
+
+            // First: untried allergens
+            FOOD_DATABASE.allergens.forEach(food => {
+                if (!introducedFoods.has(food.name)) {
+                    suggestions.push({
+                        ...food,
+                        priority: 1,
+                        categoryLabel: 'Top Allergen'
+                    });
+                }
+            });
+
+            // Second: untried iron-rich foods
+            FOOD_DATABASE.ironRich.forEach(food => {
+                if (!introducedFoods.has(food.name) && !suggestions.find(s => s.name === food.name)) {
+                    suggestions.push({
+                        ...food,
+                        priority: 2,
+                        categoryLabel: 'Iron-Rich'
+                    });
+                }
+            });
+
+            // Third: variety from other categories
+            const otherFoods = [...FOOD_DATABASE.fruits, ...FOOD_DATABASE.vegetables, ...FOOD_DATABASE.grains];
+            otherFoods.forEach(food => {
+                if (!introducedFoods.has(food.name) && !suggestions.find(s => s.name === food.name)) {
+                    suggestions.push({
+                        ...food,
+                        priority: 3,
+                        categoryLabel: food.category.charAt(0).toUpperCase() + food.category.slice(1)
+                    });
+                }
+            });
+
+            // Sort by priority and take top 5
+            suggestions.sort((a, b) => a.priority - b.priority);
+            const topSuggestions = suggestions.slice(0, 5);
+
+            const container = document.getElementById('suggestionsList');
+
+            if (topSuggestions.length === 0) {
+                container.innerHTML = '<p>Amazing! You\'ve introduced all the recommended foods in our database.</p>';
+                return;
+            }
+
+            container.innerHTML = topSuggestions.map((food, idx) => `
+                <div class="suggestion-card">
+                    <div class="suggestion-rank">${idx + 1}</div>
+                    <div class="suggestion-content">
+                        <div class="suggestion-food">${food.name}</div>
+                        <div class="suggestion-reason">${food.reason}</div>
+                        <span class="suggestion-category category-${food.isAllergen ? 'allergen' : food.ironRich ? 'iron' : food.category}">${food.categoryLabel}</span>
+                        <br>
+                        <button class="add-suggestion-btn" onclick="quickAddSuggestion('${food.name.replace(/'/g, "\\'")}')">+ Log this food</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function quickAddSuggestion(foodName) {
+            document.getElementById('foodSelect').value = foodName;
+            document.getElementById('customFood').value = '';
+            setDefaultDate();
+
+            // Switch to add tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('[data-tab="add"]').classList.add('active');
+            document.getElementById('add-tab').classList.add('active');
+        }
+
+        // History
+        function renderHistory() {
+            const data = getData();
+            const container = document.getElementById('historyList');
+
+            if (data.entries.length === 0) {
+                container.innerHTML = '<p>No foods introduced yet. Start by adding your first entry!</p>';
+                return;
+            }
+
+            // Group by date, sorted by date descending
+            const byDate = {};
+            data.entries.forEach(entry => {
+                if (!byDate[entry.date]) {
+                    byDate[entry.date] = [];
+                }
+                byDate[entry.date].push(entry);
+            });
+
+            const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+            container.innerHTML = sortedDates.map(dateStr => {
+                const entries = byDate[dateStr];
+                const date = new Date(dateStr + 'T12:00:00');
+                const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+
+                return `
+                    <div class="history-item">
+                        <div class="history-date">${date.toLocaleDateString('en-US', options)}</div>
+                        ${entries.map((entry, idx) => {
+                            const foodInfo = UNIQUE_FOODS.find(f => f.name === entry.food);
+                            const isAllergen = foodInfo && foodInfo.isAllergen;
+                            return `
+                                <span class="history-food${isAllergen ? ' allergen' : ''}">${entry.food}</span>
+                                ${entry.notes ? `<div class="history-notes">${escapeHtml(entry.notes)}</div>` : ''}
+                                ${entry.photo ? `<div class="history-photo"><img src="${entry.photo}" onclick="openPhotoModal('${entry.photo}')" alt="Food photo"></div>` : ''}
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Data management
+        function exportData() {
+            const data = getData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `baby-food-tracker-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importDataPrompt() {
+            document.getElementById('importFile').click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (!importedData.entries || !Array.isArray(importedData.entries)) {
+                        throw new Error('Invalid data format');
+                    }
+
+                    if (confirm(`Import ${importedData.entries.length} entries? This will replace your current data.`)) {
+                        saveData(importedData);
+                        renderCalendar();
+                        renderSuggestions();
+                        renderHistory();
+                        alert('Data imported successfully!');
+                    }
+                } catch (err) {
+                    alert('Error importing data: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to delete ALL your food tracking data? This cannot be undone.')) {
+                if (confirm('This is your last chance! Click OK to permanently delete all data.')) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    renderCalendar();
+                    renderSuggestions();
+                    renderHistory();
+                    alert('All data has been cleared.');
+                }
+            }
+        }
+
+        // Utility
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
