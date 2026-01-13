@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Growth Calculator - Locally Optimal Tools</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+            font-size: 1.3em;
+        }
+        .intro {
+            background: #f6f8fa;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+            color: #24292e;
+        }
+        .intro p {
+            margin: 8px 0;
+        }
+        .inputs {
+            margin: 25px 0;
+        }
+        .input-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .input-group {
+            flex: 1;
+            min-width: 180px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #24292e;
+            font-size: 0.95em;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #0366d6;
+        }
+        .input-group small {
+            color: #6a737d;
+            font-size: 0.85em;
+            display: block;
+            margin-top: 4px;
+        }
+        #results {
+            margin-top: 30px;
+        }
+        .chart-container {
+            background: #fff;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        canvas {
+            width: 100%;
+            height: auto;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: #f6f8fa;
+            padding: 15px 20px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .summary-card.highlight {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+        }
+        .summary-card.positive {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+        }
+        .summary-label {
+            font-size: 0.85em;
+            color: #586069;
+            margin-bottom: 5px;
+        }
+        .summary-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #24292e;
+        }
+        .summary-card.highlight .summary-value {
+            color: #c53030;
+        }
+        .summary-card.positive .summary-value {
+            color: #276749;
+        }
+        .summary-sublabel {
+            font-size: 0.8em;
+            color: #6a737d;
+            margin-top: 3px;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        .monte-carlo-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e1e4e8;
+            color: #586069;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: help;
+            margin-left: 4px;
+            position: relative;
+        }
+        .info-icon:hover .tooltip {
+            display: block;
+        }
+        .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #24292e;
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: normal;
+            width: 280px;
+            line-height: 1.5;
+            z-index: 100;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #24292e;
+        }
+        .tooltip a {
+            color: #79b8ff;
+        }
+        .monte-carlo-controls {
+            background: #f6f8fa;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .monte-carlo-controls .input-group {
+            max-width: 300px;
+        }
+        .percentile-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .percentile-table th, .percentile-table td {
+            padding: 10px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e4e8;
+        }
+        .percentile-table th {
+            font-weight: 600;
+            color: #24292e;
+            font-size: 0.9em;
+        }
+        .percentile-table td {
+            font-size: 0.95em;
+        }
+        .percentile-table tr:last-child td {
+            border-bottom: none;
+        }
+        .percentile-label {
+            color: #586069;
+        }
+        .percentile-value {
+            font-weight: 600;
+            text-align: right;
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #586069;
+        }
+        footer a {
+            color: #0366d6;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+                margin: 20px auto;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .input-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .input-group {
+                min-width: 100%;
+            }
+            .summary-value {
+                font-size: 1.5em;
+            }
+            .legend {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Investment Growth Calculator</h1>
+
+    <div class="intro">
+        <p>See how your investments grow over time and understand the true cost of advisor fees. A "small" 1% annual fee can cost hundreds of thousands over a career.</p>
+        <p><em>This calculator also runs Monte Carlo simulations to show you the range of possible outcomes, not just a single projection.</em></p>
+    </div>
+
+    <div class="inputs">
+        <div class="input-row">
+            <div class="input-group">
+                <label for="startingAmount">Starting Investment ($)</label>
+                <input type="number" id="startingAmount" value="50000" min="0" step="1000">
+            </div>
+            <div class="input-group">
+                <label for="monthlyContribution">Monthly Contribution ($)</label>
+                <input type="number" id="monthlyContribution" value="1000" min="0" step="100">
+            </div>
+        </div>
+
+        <div class="input-row">
+            <div class="input-group">
+                <label for="yearsToGrow">Investment Period (years)</label>
+                <input type="number" id="yearsToGrow" value="30" min="1" max="60" step="1">
+            </div>
+            <div class="input-group">
+                <label for="annualReturn">Expected Annual Return (%)</label>
+                <input type="number" id="annualReturn" value="7" min="0" max="20" step="0.5">
+                <small>7% is typical for stocks after inflation</small>
+            </div>
+        </div>
+
+        <div class="input-row">
+            <div class="input-group">
+                <label for="advisorFee">Advisor Fee (%/year)</label>
+                <input type="number" id="advisorFee" value="1" min="0" max="3" step="0.1">
+                <small>Typical range: 0.5% - 1.5%</small>
+            </div>
+        </div>
+    </div>
+
+    <div id="results">
+        <h2>Growth Projection</h2>
+
+        <div class="summary-grid">
+            <div class="summary-card positive">
+                <div class="summary-label">Without Advisor Fee</div>
+                <div class="summary-value" id="finalNoFee">$0</div>
+                <div class="summary-sublabel">after <span id="yearsDisplay1">30</span> years</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">With <span id="feeDisplay">1%</span> Advisor Fee</div>
+                <div class="summary-value" id="finalWithFee">$0</div>
+                <div class="summary-sublabel">after <span id="yearsDisplay2">30</span> years</div>
+            </div>
+            <div class="summary-card highlight">
+                <div class="summary-label">Total Cost of Advisor</div>
+                <div class="summary-value" id="totalCost">$0</div>
+                <div class="summary-sublabel">
+                    <span id="feesPaid">$0</span> fees paid + <span id="opportunityCost">$0</span> lost growth
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="growthChart" width="860" height="350"></canvas>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #28a745;"></div>
+                    <span>Without advisor fee</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #0366d6;"></div>
+                    <span>With advisor fee</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(220, 53, 69, 0.3);"></div>
+                    <span>Cost of advisor (difference)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="monte-carlo-section">
+            <h2>
+                Monte Carlo Simulation
+                <span class="info-icon">?
+                    <span class="tooltip">
+                        Instead of showing one "expected" outcome, Monte Carlo runs 1,000 simulations with randomized yearly returns. This shows the range of possible outcomes based on market volatility.
+                        <br><br>
+                        <a href="https://www.investopedia.com/terms/m/montecarlosimulation.asp" target="_blank">Learn more about Monte Carlo</a>
+                    </span>
+                </span>
+            </h2>
+
+            <div class="monte-carlo-controls">
+                <div class="input-group">
+                    <label for="volatility">
+                        Return Volatility (%)
+                        <span class="info-icon">?
+                            <span class="tooltip">
+                                Volatility measures how much returns vary year-to-year. Higher volatility = wider range of outcomes. Historically, US stocks have ~15% volatility, bonds ~5%.
+                                <br><br>
+                                <a href="https://www.investopedia.com/terms/v/volatility.asp" target="_blank">Learn more about volatility</a>
+                            </span>
+                        </span>
+                    </label>
+                    <input type="number" id="volatility" value="15" min="0" max="40" step="1">
+                    <small>~15% for stocks, ~5% for bonds</small>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="histogramChart" width="860" height="300"></canvas>
+            </div>
+
+            <table class="percentile-table">
+                <thead>
+                    <tr>
+                        <th>Outcome</th>
+                        <th style="text-align: right;">Final Value</th>
+                    </tr>
+                </thead>
+                <tbody id="percentileTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        <p><a href="index.html">&larr; Back to tools</a></p>
+    </footer>
+
+    <script>
+        // DOM elements
+        const startingAmountInput = document.getElementById('startingAmount');
+        const monthlyContributionInput = document.getElementById('monthlyContribution');
+        const yearsToGrowInput = document.getElementById('yearsToGrow');
+        const annualReturnInput = document.getElementById('annualReturn');
+        const advisorFeeInput = document.getElementById('advisorFee');
+        const volatilityInput = document.getElementById('volatility');
+
+        function formatCurrency(amount) {
+            if (amount >= 1000000) {
+                return '$' + (amount / 1000000).toFixed(2) + 'M';
+            }
+            return '$' + Math.round(amount).toLocaleString('en-US');
+        }
+
+        function getInputValues() {
+            return {
+                startingAmount: Math.max(0, parseFloat(startingAmountInput.value) || 0),
+                monthlyContribution: Math.max(0, parseFloat(monthlyContributionInput.value) || 0),
+                years: Math.max(1, Math.min(60, parseInt(yearsToGrowInput.value) || 30)),
+                annualReturn: Math.max(0, Math.min(20, parseFloat(annualReturnInput.value) || 7)) / 100,
+                advisorFee: Math.max(0, Math.min(3, parseFloat(advisorFeeInput.value) || 1)) / 100,
+                volatility: Math.max(0, Math.min(40, parseFloat(volatilityInput.value) || 15)) / 100
+            };
+        }
+
+        function calculateGrowth(startingAmount, monthlyContribution, years, annualReturn, advisorFee = 0) {
+            const yearlyData = [startingAmount];
+            let balance = startingAmount;
+            let totalFeesPaid = 0;
+
+            for (let year = 1; year <= years; year++) {
+                // Add monthly contributions and apply yearly return
+                for (let month = 0; month < 12; month++) {
+                    balance += monthlyContribution;
+                    balance *= (1 + annualReturn / 12);
+                    // Track fees paid (deducted monthly from balance)
+                    if (advisorFee > 0) {
+                        const monthlyFee = balance * (advisorFee / 12);
+                        totalFeesPaid += monthlyFee;
+                    }
+                }
+                yearlyData.push(balance);
+            }
+
+            return { yearlyData, totalFeesPaid };
+        }
+
+        function runMonteCarloSimulation(startingAmount, monthlyContribution, years, annualReturn, volatility, numSimulations = 1000) {
+            const results = [];
+
+            for (let sim = 0; sim < numSimulations; sim++) {
+                let balance = startingAmount;
+
+                for (let year = 0; year < years; year++) {
+                    // Generate random return using Box-Muller transform for normal distribution
+                    // Ensure u1 > 0 to avoid Math.log(0) = -Infinity
+                    const u1 = Math.random() || Number.MIN_VALUE;
+                    const u2 = Math.random();
+                    const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                    const yearlyReturn = annualReturn + z * volatility;
+
+                    // Add monthly contributions throughout the year
+                    for (let month = 0; month < 12; month++) {
+                        balance += monthlyContribution;
+                    }
+
+                    // Apply yearly return
+                    balance *= (1 + yearlyReturn);
+                    balance = Math.max(0, balance); // Can't go negative
+                }
+
+                results.push(balance);
+            }
+
+            return results.sort((a, b) => a - b);
+        }
+
+        function getPercentile(sortedArray, percentile) {
+            const index = Math.floor(sortedArray.length * percentile / 100);
+            return sortedArray[Math.min(index, sortedArray.length - 1)];
+        }
+
+        function drawGrowthChart(noFeeData, withFeeData) {
+            const canvas = document.getElementById('growthChart');
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+
+            // Set canvas size accounting for device pixel ratio
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+            const height = rect.height;
+            const padding = { top: 20, right: 20, bottom: 40, left: 70 };
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            // Find max value for scaling
+            const maxValue = Math.max(...noFeeData, ...withFeeData);
+            const yScale = chartHeight / maxValue;
+            const xScale = chartWidth / (noFeeData.length - 1);
+
+            // Draw grid lines
+            ctx.strokeStyle = '#e1e4e8';
+            ctx.lineWidth = 1;
+            const numGridLines = 5;
+            for (let i = 0; i <= numGridLines; i++) {
+                const y = padding.top + (chartHeight * i / numGridLines);
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(width - padding.right, y);
+                ctx.stroke();
+
+                // Y-axis labels
+                const value = maxValue * (1 - i / numGridLines);
+                ctx.fillStyle = '#586069';
+                ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
+            }
+
+            // Draw shaded area between the two lines (cost of advisor)
+            ctx.fillStyle = 'rgba(220, 53, 69, 0.2)';
+            ctx.beginPath();
+            for (let i = 0; i < noFeeData.length; i++) {
+                const x = padding.left + i * xScale;
+                const y = padding.top + chartHeight - noFeeData[i] * yScale;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            for (let i = withFeeData.length - 1; i >= 0; i--) {
+                const x = padding.left + i * xScale;
+                const y = padding.top + chartHeight - withFeeData[i] * yScale;
+                ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw no-fee line (green)
+            ctx.strokeStyle = '#28a745';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let i = 0; i < noFeeData.length; i++) {
+                const x = padding.left + i * xScale;
+                const y = padding.top + chartHeight - noFeeData[i] * yScale;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Draw with-fee line (blue)
+            ctx.strokeStyle = '#0366d6';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let i = 0; i < withFeeData.length; i++) {
+                const x = padding.left + i * xScale;
+                const y = padding.top + chartHeight - withFeeData[i] * yScale;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // X-axis labels (years)
+            ctx.fillStyle = '#586069';
+            ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'center';
+            const years = noFeeData.length - 1;
+            const labelInterval = years <= 10 ? 1 : years <= 20 ? 5 : 10;
+            for (let i = 0; i <= years; i += labelInterval) {
+                const x = padding.left + i * xScale;
+                ctx.fillText(`Year ${i}`, x, height - padding.bottom + 20);
+            }
+        }
+
+        function drawHistogram(results) {
+            const canvas = document.getElementById('histogramChart');
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            const width = rect.width;
+            const height = rect.height;
+            const padding = { top: 20, right: 20, bottom: 40, left: 70 };
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Create histogram bins
+            const numBins = 30;
+            const minVal = results[0];
+            const maxVal = results[results.length - 1];
+            const binWidth = (maxVal - minVal) / numBins;
+            const bins = new Array(numBins).fill(0);
+
+            results.forEach(val => {
+                const binIndex = Math.min(Math.floor((val - minVal) / binWidth), numBins - 1);
+                bins[binIndex]++;
+            });
+
+            const maxBinCount = Math.max(...bins);
+            const barWidth = chartWidth / numBins;
+
+            // Draw bars
+            bins.forEach((count, i) => {
+                const barHeight = (count / maxBinCount) * chartHeight;
+                const x = padding.left + i * barWidth;
+                const y = padding.top + chartHeight - barHeight;
+
+                // Gradient based on position (worse to better outcomes)
+                const ratio = i / numBins;
+                if (ratio < 0.2) {
+                    ctx.fillStyle = 'rgba(220, 53, 69, 0.7)'; // Red for bad outcomes
+                } else if (ratio < 0.4) {
+                    ctx.fillStyle = 'rgba(253, 126, 20, 0.7)'; // Orange
+                } else if (ratio < 0.6) {
+                    ctx.fillStyle = 'rgba(255, 193, 7, 0.7)'; // Yellow
+                } else if (ratio < 0.8) {
+                    ctx.fillStyle = 'rgba(40, 167, 69, 0.6)'; // Light green
+                } else {
+                    ctx.fillStyle = 'rgba(40, 167, 69, 0.8)'; // Green for good outcomes
+                }
+
+                ctx.fillRect(x, y, barWidth - 1, barHeight);
+            });
+
+            // Draw median line
+            const medianIndex = Math.floor(results.length / 2);
+            const medianValue = results[medianIndex];
+            const medianX = padding.left + ((medianValue - minVal) / (maxVal - minVal)) * chartWidth;
+
+            ctx.strokeStyle = '#0366d6';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(medianX, padding.top);
+            ctx.lineTo(medianX, padding.top + chartHeight);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Median label
+            ctx.fillStyle = '#0366d6';
+            ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Median: ' + formatCurrency(medianValue), medianX, padding.top - 5);
+
+            // X-axis labels
+            ctx.fillStyle = '#586069';
+            ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'center';
+            const numLabels = 5;
+            for (let i = 0; i <= numLabels; i++) {
+                const value = minVal + (maxVal - minVal) * (i / numLabels);
+                const x = padding.left + (i / numLabels) * chartWidth;
+                ctx.fillText(formatCurrency(value), x, height - padding.bottom + 20);
+            }
+
+            // Y-axis label
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#586069';
+            ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.fillText('Frequency', 0, 0);
+            ctx.restore();
+        }
+
+        function updatePercentileTable(results) {
+            const tbody = document.getElementById('percentileTable');
+            const percentiles = [
+                { label: 'Worst case (10th percentile)', value: getPercentile(results, 10) },
+                { label: '25th percentile', value: getPercentile(results, 25) },
+                { label: 'Median (50th percentile)', value: getPercentile(results, 50) },
+                { label: '75th percentile', value: getPercentile(results, 75) },
+                { label: 'Best case (90th percentile)', value: getPercentile(results, 90) }
+            ];
+
+            tbody.innerHTML = percentiles.map(p => `
+                <tr>
+                    <td class="percentile-label">${p.label}</td>
+                    <td class="percentile-value">${formatCurrency(p.value)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function calculate() {
+            const inputs = getInputValues();
+
+            // Calculate deterministic growth
+            const noFeeResult = calculateGrowth(
+                inputs.startingAmount,
+                inputs.monthlyContribution,
+                inputs.years,
+                inputs.annualReturn
+            );
+
+            const withFeeResult = calculateGrowth(
+                inputs.startingAmount,
+                inputs.monthlyContribution,
+                inputs.years,
+                inputs.annualReturn - inputs.advisorFee,
+                inputs.advisorFee
+            );
+
+            const noFeeData = noFeeResult.yearlyData;
+            const withFeeData = withFeeResult.yearlyData;
+            const feesPaid = withFeeResult.totalFeesPaid;
+
+            const finalNoFee = noFeeData[noFeeData.length - 1];
+            const finalWithFee = withFeeData[withFeeData.length - 1];
+            const totalCost = finalNoFee - finalWithFee;
+            const opportunityCost = totalCost - feesPaid;
+
+            // Update summary
+            document.getElementById('finalNoFee').textContent = formatCurrency(finalNoFee);
+            document.getElementById('finalWithFee').textContent = formatCurrency(finalWithFee);
+            document.getElementById('totalCost').textContent = formatCurrency(totalCost);
+            document.getElementById('feesPaid').textContent = formatCurrency(feesPaid);
+            document.getElementById('opportunityCost').textContent = formatCurrency(opportunityCost);
+            document.getElementById('feeDisplay').textContent = inputs.advisorFee * 100 + '%';
+            document.getElementById('yearsDisplay1').textContent = inputs.years;
+            document.getElementById('yearsDisplay2').textContent = inputs.years;
+
+            // Draw growth chart
+            drawGrowthChart(noFeeData, withFeeData);
+
+            // Run Monte Carlo simulation (with advisor fee deducted from returns)
+            const monteCarloResults = runMonteCarloSimulation(
+                inputs.startingAmount,
+                inputs.monthlyContribution,
+                inputs.years,
+                inputs.annualReturn - inputs.advisorFee,
+                inputs.volatility
+            );
+
+            // Draw histogram and update table
+            drawHistogram(monteCarloResults);
+            updatePercentileTable(monteCarloResults);
+        }
+
+        // Event listeners
+        [startingAmountInput, monthlyContributionInput, yearsToGrowInput,
+         annualReturnInput, advisorFeeInput, volatilityInput].forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(calculate, 100);
+        });
+
+        // Initialize
+        calculate();
+    </script>
+</body>
+</html>
