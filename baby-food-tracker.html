@@ -815,7 +815,16 @@
         }
 
         function saveData(data) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    alert('Storage limit reached. Try removing some photos or exporting and clearing old data.');
+                } else {
+                    alert('Failed to save data: ' + e.message);
+                }
+                throw e; // Re-throw so callers know save failed
+            }
         }
 
         // Populate food dropdown
