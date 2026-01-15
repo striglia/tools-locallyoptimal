@@ -1126,9 +1126,10 @@
         }
 
         function addEntryForDay() {
+            const dateToAdd = selectedDayDate;
             closeDayModal();
-            if (selectedDayDate) {
-                document.getElementById('entryDate').value = selectedDayDate;
+            if (dateToAdd) {
+                document.getElementById('entryDate').value = dateToAdd;
             }
             // Switch to add tab
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
