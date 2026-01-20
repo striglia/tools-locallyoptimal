@@ -752,10 +752,23 @@
             updatePercentileTable(monteCarloResults);
         }
 
+        // Debounce helper - delays execution until user stops typing
+        function debounce(fn, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        // Debounced calculate for input events (250ms delay for better battery/performance)
+        // All inputs share one debounced function so rapid typing across fields triggers one calculation
+        const debouncedCalculate = debounce(calculate, 250);
+
         // Event listeners
         [startingAmountInput, monthlyContributionInput, yearsToGrowInput,
          annualReturnInput, advisorFeeInput, volatilityInput].forEach(input => {
-            input.addEventListener('input', calculate);
+            input.addEventListener('input', debouncedCalculate);
         });
 
         // Handle window resize
