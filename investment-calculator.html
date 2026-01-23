@@ -416,14 +416,20 @@
             return '$' + Math.round(amount).toLocaleString('en-US');
         }
 
+        // Parse input value with a default for empty/invalid inputs (handles zero correctly)
+        function parseWithDefault(value, defaultVal) {
+            const parsed = parseFloat(value);
+            return isNaN(parsed) ? defaultVal : parsed;
+        }
+
         function getInputValues() {
             return {
-                startingAmount: Math.max(0, parseFloat(startingAmountInput.value) || 0),
-                monthlyContribution: Math.max(0, parseFloat(monthlyContributionInput.value) || 0),
+                startingAmount: Math.max(0, parseWithDefault(startingAmountInput.value, 0)),
+                monthlyContribution: Math.max(0, parseWithDefault(monthlyContributionInput.value, 0)),
                 years: Math.max(1, Math.min(60, parseInt(yearsToGrowInput.value) || 30)),
-                annualReturn: Math.max(0, Math.min(20, parseFloat(annualReturnInput.value) || 7)) / 100,
-                advisorFee: Math.max(0, Math.min(3, parseFloat(advisorFeeInput.value) || 1)) / 100,
-                volatility: Math.max(0, Math.min(40, parseFloat(volatilityInput.value) || 15)) / 100
+                annualReturn: Math.max(0, Math.min(20, parseWithDefault(annualReturnInput.value, 7))) / 100,
+                advisorFee: Math.max(0, Math.min(3, parseWithDefault(advisorFeeInput.value, 1))) / 100,
+                volatility: Math.max(0, Math.min(40, parseWithDefault(volatilityInput.value, 15))) / 100
             };
         }
 
