@@ -153,34 +153,32 @@
             margin-bottom: 12px;
         }
 
-        /* Upload button */
-        .upload-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background: #f6f8fa;
-            border: 1px solid #e1e4e8;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85em;
-            color: #586069;
-            margin-top: 8px;
-        }
-        .upload-btn:hover {
-            background: #e1e4e8;
-        }
+        /* Upload status */
         .upload-status {
             font-size: 0.85em;
             color: #586069;
-            margin-top: 4px;
+            width: 100%;
+            text-align: center;
             min-height: 1.2em;
         }
 
         /* Add scenario */
         .add-scenario-row {
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
             margin: 10px 0 30px;
+        }
+        .upload-scenario-btn {
+            cursor: pointer;
+            border-style: dashed !important;
+            border-color: #d1d5da !important;
+            color: #586069 !important;
+        }
+        .upload-scenario-btn:hover:not(:disabled) {
+            background: #e1e4e8 !important;
         }
         .add-scenario-btn {
             background: #f6f8fa;
@@ -678,8 +676,13 @@
     <h2>Loan Scenarios</h2>
     <div id="scenariosContainer"></div>
 
-    <div class="add-scenario-row">
+    <div class="add-scenario-row" id="addScenarioRow">
         <button class="add-scenario-btn" id="addScenarioBtn" onclick="addScenario()">+ Add Scenario</button>
+        <label class="add-scenario-btn upload-scenario-btn" id="uploadScenarioBtn">
+            &#128196; Upload Loan Estimate
+            <input type="file" id="uploadScenarioFile" accept="image/png,image/jpeg,image/webp,.pdf" style="display:none;">
+        </label>
+        <div class="upload-status" id="uploadStatus"></div>
     </div>
 
     <div id="results">
@@ -1061,12 +1064,6 @@
                     html += makeSelectGroup('Loan Term', scenario.id, 'loanTerm', scenario.loanTerm || 30, termOptions);
                     html += makeInputGroup('Closing Costs ($)', scenario.id, 'closingCosts', scenario.closingCosts || 0, 'number', { min: 0, step: 1000 });
                     html += makeInputGroup('Extra Monthly Payment ($)', scenario.id, 'extraPayment', scenario.extraPayment || 0, 'number', { min: 0, step: 100 }, 'Additional principal each month');
-                    // Upload button
-                    html += '<label class="upload-btn">';
-                    html += '<span>&#128196; Upload Loan Estimate</span>';
-                    html += '<input type="file" accept="image/png,image/jpeg" data-upload-id="' + scenario.id + '" style="display:none;">';
-                    html += '</label>';
-                    html += '<div class="upload-status" id="uploadStatus-' + scenario.id + '"></div>';
                 }
 
                 html += '</div>';
@@ -1075,11 +1072,8 @@
             html += '</div>';
             container.innerHTML = html;
 
-            // Update add button state
-            const addBtn = document.getElementById('addScenarioBtn');
-            if (addBtn) {
-                addBtn.disabled = state.scenarios.length >= MAX_SCENARIOS;
-            }
+            // Update add button and upload button state
+            updateAddScenarioRow();
 
             // Restore focus
             if (activeScenarioId && activeField) {
@@ -1714,12 +1708,21 @@
             });
         }
 
-        function handleFileUpload(scenarioId, file) {
-            var statusEl = document.getElementById('uploadStatus-' + scenarioId);
-            if (!statusEl) return;
+        function handleUploadAndAddScenario(file) {
+            if (state.scenarios.length >= MAX_SCENARIOS) return;
 
+            var statusEl = document.getElementById('uploadStatus');
             statusEl.textContent = 'Loading OCR engine...';
             statusEl.style.color = '#586069';
+
+            // Create the new scenario immediately so user sees it
+            var newScenario = { id: state.nextId, downPaymentPct: 20, interestRate: 6.0, loanTerm: 30, extraPayment: 0, closingCosts: 0 };
+            state.scenarios.push(newScenario);
+            state.nextId++;
+            var scenarioId = newScenario.id;
+            renderScenarios();
+            updateAddScenarioRow();
+            calculate();
 
             loadTesseract().then(function() {
                 statusEl.textContent = 'Processing image...';
@@ -1754,10 +1757,22 @@
                     statusEl.style.color = '#d73a49';
                     showOcrFallback(text, scenarioId);
                 }
+                setTimeout(function() { statusEl.textContent = ''; }, 5000);
             }).catch(function(err) {
                 statusEl.textContent = 'Error: ' + err.message;
                 statusEl.style.color = '#d73a49';
+                setTimeout(function() { statusEl.textContent = ''; }, 5000);
             });
+        }
+
+        function updateAddScenarioRow() {
+            var atMax = state.scenarios.length >= MAX_SCENARIOS;
+            var addBtn = document.getElementById('addScenarioBtn');
+            var uploadBtn = document.getElementById('uploadScenarioBtn');
+            if (addBtn) addBtn.disabled = atMax;
+            if (uploadBtn) {
+                uploadBtn.style.display = (state.mode === 'new-loan' && !atMax) ? '' : 'none';
+            }
         }
 
         function parseLoanEstimate(text) {
@@ -1856,10 +1871,14 @@
                     updateScenarioField(parseInt(el.dataset.scenarioId), el.dataset.field, el.value);
                     calculate();
                 }
-                // File upload
-                if (el.type === 'file' && el.dataset.uploadId) {
-                    var file = el.files[0];
-                    if (file) handleFileUpload(parseInt(el.dataset.uploadId), file);
+            });
+
+            // Upload loan estimate to add new scenario
+            document.getElementById('uploadScenarioFile').addEventListener('change', function(e) {
+                var file = e.target.files[0];
+                if (file) {
+                    handleUploadAndAddScenario(file);
+                    e.target.value = '';  // reset so same file can be re-selected
                 }
             });
 
