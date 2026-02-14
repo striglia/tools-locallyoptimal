@@ -4,7 +4,7 @@ Project-specific instructions for Claude Code when working on this repository.
 
 ## Project Overview
 
-This is a collection of small, single-purpose browser tools inspired by [Simon Willison's tools](https://tools.simonwillison.net/). Each tool is a standalone HTML file with embedded CSS and JavaScript - no build process, no dependencies, just open and use.
+This is a collection of small, single-purpose browser tools inspired by [Simon Willison's tools](https://tools.simonwillison.net/). Each tool is a standalone HTML file with embedded CSS and JavaScript - no build process required. External libraries via CDN are welcome when they simplify implementation.
 
 **Target audience**: SF-based, high-income dual-earner households (tech + professional backgrounds) looking for practical financial and productivity tools.
 
@@ -42,9 +42,10 @@ All tools must follow these requirements:
 
 #### Architecture
 - ✅ Single standalone HTML file with embedded CSS and JavaScript
-- ✅ No external dependencies (no CDNs, no frameworks)
+- ✅ No build step required (no bundlers, no transpilers, no npm)
+- ✅ External libraries via CDN are fine (e.g., Chart.js, D3, etc.)
 - ✅ All processing happens client-side (no server calls)
-- ✅ Works offline after first load
+- ✅ Works offline after first load (except CDN libraries unless cached)
 
 #### Design
 - ✅ Mobile-responsive (viewport meta tag + responsive CSS)
@@ -174,11 +175,11 @@ See TOOLS_GUIDE.md for:
 
 ## Philosophy
 
-> "Makes abstract concepts concrete through simple, focused tools. Each tool does one thing well. No unnecessary complexity, no external dependencies, just helpful calculations that run entirely in your browser."
+> "Makes abstract concepts concrete through simple, focused tools. Each tool does one thing well. No unnecessary complexity, no build steps, just helpful calculations that run entirely in your browser."
 
 Focus on tools that are:
 - **Practical** - Solve real problems for the target audience
 - **Simple** - No learning curve, obvious how to use
 - **Fast** - Instant feedback, no loading states
 - **Private** - All calculations client-side, no data sent anywhere
-- **Permanent** - Works offline, no API dependencies to break
+- **Permanent** - No build steps, no API dependencies to break
