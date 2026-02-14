@@ -316,10 +316,60 @@
             border-radius: 6px;
             padding: 20px;
             margin: 20px 0;
+            position: relative;
         }
         canvas {
             width: 100%;
             height: auto;
+            cursor: crosshair;
+        }
+        .chart-tooltip {
+            display: none;
+            position: absolute;
+            background: #24292e;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.6;
+            pointer-events: none;
+            z-index: 50;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .chart-tooltip .tooltip-year {
+            font-weight: 600;
+            margin-bottom: 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 3px;
+        }
+        .chart-tooltip .tooltip-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .chart-tooltip .tooltip-swatch {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            display: inline-block;
+        }
+        .chart-reset-zoom {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #f6f8fa;
+            border: 1px solid #d1d5da;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 0.8em;
+            cursor: pointer;
+            color: #0366d6;
+            z-index: 10;
+            display: none;
+        }
+        .chart-reset-zoom:hover {
+            background: #e1e4e8;
         }
         .legend {
             display: flex;
@@ -643,14 +693,18 @@
         <div id="totalCostCards" class="summary-grid"></div>
 
         <h2>Equity Build-Up Over Time</h2>
-        <div class="chart-container">
+        <div class="chart-container" id="equityChartContainer">
+            <button class="chart-reset-zoom" id="equityResetZoom" onclick="resetZoom('equity')">Reset Zoom</button>
             <canvas id="equityChart" width="860" height="350"></canvas>
+            <div class="chart-tooltip" id="equityTooltip"></div>
             <div id="equityLegend" class="legend"></div>
         </div>
 
         <h2>Remaining Balance Over Time</h2>
-        <div class="chart-container">
+        <div class="chart-container" id="balanceChartContainer">
+            <button class="chart-reset-zoom" id="balanceResetZoom" onclick="resetZoom('balance')">Reset Zoom</button>
             <canvas id="balanceChart" width="860" height="350"></canvas>
+            <div class="chart-tooltip" id="balanceTooltip"></div>
             <div id="balanceLegend" class="legend"></div>
         </div>
 
@@ -1000,12 +1054,6 @@
                     html += makeSelectGroup('Loan Term', scenario.id, 'loanTerm', scenario.loanTerm || 30, termOptions);
                     html += makeInputGroup('Closing Costs ($)', scenario.id, 'closingCosts', scenario.closingCosts || 0, 'number', { min: 0, step: 1000 });
                     html += makeInputGroup('Extra Monthly Payment ($)', scenario.id, 'extraPayment', scenario.extraPayment || 0, 'number', { min: 0, step: 100 }, 'Additional principal each month');
-                    // Upload button
-                    html += '<label class="upload-btn">';
-                    html += '<span>&#128196; Upload Loan Estimate</span>';
-                    html += '<input type="file" accept="image/png,image/jpeg" data-upload-id="' + scenario.id + '" style="display:none;">';
-                    html += '</label>';
-                    html += '<div class="upload-status" id="uploadStatus-' + scenario.id + '"></div>';
                 } else {
                     // New loan mode
                     html += makeInputGroup('Down Payment (%)', scenario.id, 'downPaymentPct', scenario.downPaymentPct || 0, 'number', { min: 0, max: 100, step: 1 });
@@ -1257,38 +1305,64 @@
         }
 
         // ===== CHARTS =====
-        function drawLineChart(canvasId, seriesArray) {
+        // Chart state for zoom and interaction
+        var chartState = {
+            equity: { zoomStart: null, zoomEnd: null, series: [], dragStart: null, isDragging: false },
+            balance: { zoomStart: null, zoomEnd: null, series: [], dragStart: null, isDragging: false }
+        };
+
+        function getChartLayout(canvas) {
+            var rect = canvas.getBoundingClientRect();
+            var padding = { top: 20, right: 20, bottom: 40, left: 80 };
+            return {
+                rect: rect,
+                width: rect.width,
+                height: rect.height,
+                padding: padding,
+                chartWidth: rect.width - padding.left - padding.right,
+                chartHeight: rect.height - padding.top - padding.bottom
+            };
+        }
+
+        function drawLineChart(canvasId, seriesArray, zoomStart, zoomEnd) {
             var canvas = document.getElementById(canvasId);
             var ctx = canvas.getContext('2d');
             var dpr = window.devicePixelRatio || 1;
 
-            var rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
+            var layout = getChartLayout(canvas);
+            canvas.width = layout.width * dpr;
+            canvas.height = layout.height * dpr;
             ctx.scale(dpr, dpr);
 
-            var width = rect.width;
-            var height = rect.height;
-            var padding = { top: 20, right: 20, bottom: 40, left: 80 };
-            var chartWidth = width - padding.left - padding.right;
-            var chartHeight = height - padding.top - padding.bottom;
+            var padding = layout.padding;
+            var chartWidth = layout.chartWidth;
+            var chartHeight = layout.chartHeight;
 
-            ctx.clearRect(0, 0, width, height);
+            ctx.clearRect(0, 0, layout.width, layout.height);
 
-            var maxPoints = 0;
+            var totalPoints = 0;
+            seriesArray.forEach(function(s) {
+                if (s.points.length > totalPoints) totalPoints = s.points.length;
+            });
+            if (totalPoints <= 1) return;
+
+            var fullMaxYears = totalPoints - 1;
+            var startYear = zoomStart != null ? zoomStart : 0;
+            var endYear = zoomEnd != null ? zoomEnd : fullMaxYears;
+            var visibleYears = endYear - startYear;
+            if (visibleYears <= 0) return;
+
+            // Compute max value in visible range
             var maxValue = 0;
             seriesArray.forEach(function(s) {
-                if (s.points.length > maxPoints) maxPoints = s.points.length;
-                s.points.forEach(function(v) {
-                    if (v > maxValue) maxValue = v;
-                });
+                for (var i = startYear; i <= endYear && i < s.points.length; i++) {
+                    if (s.points[i] > maxValue) maxValue = s.points[i];
+                }
             });
+            if (maxValue === 0) return;
 
-            if (maxValue === 0 || maxPoints <= 1) return;
-
-            var maxYears = maxPoints - 1;
             var yScale = chartHeight / maxValue;
-            var xScale = chartWidth / maxYears;
+            var xScale = chartWidth / visibleYears;
 
             // Grid lines
             ctx.strokeStyle = '#e1e4e8';
@@ -1298,7 +1372,7 @@
                 var y = padding.top + (chartHeight * i / numGridLines);
                 ctx.beginPath();
                 ctx.moveTo(padding.left, y);
-                ctx.lineTo(width - padding.right, y);
+                ctx.lineTo(layout.width - padding.right, y);
                 ctx.stroke();
 
                 var value = maxValue * (1 - i / numGridLines);
@@ -1313,10 +1387,11 @@
                 ctx.strokeStyle = series.color;
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
-                for (var i = 0; i < series.points.length; i++) {
-                    var x = padding.left + i * xScale;
+                var started = false;
+                for (var i = startYear; i <= endYear && i < series.points.length; i++) {
+                    var x = padding.left + (i - startYear) * xScale;
                     var yVal = padding.top + chartHeight - series.points[i] * yScale;
-                    if (i === 0) ctx.moveTo(x, yVal);
+                    if (!started) { ctx.moveTo(x, yVal); started = true; }
                     else ctx.lineTo(x, yVal);
                 }
                 ctx.stroke();
@@ -1326,33 +1401,244 @@
             ctx.fillStyle = '#586069';
             ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
             ctx.textAlign = 'center';
-            var labelInterval = maxYears <= 10 ? 1 : maxYears <= 20 ? 5 : 10;
-            for (var i = 0; i <= maxYears; i += labelInterval) {
-                var x = padding.left + i * xScale;
-                ctx.fillText('Year ' + i, x, height - padding.bottom + 20);
+            var labelInterval = visibleYears <= 5 ? 1 : visibleYears <= 10 ? 2 : visibleYears <= 20 ? 5 : 10;
+            for (var i = startYear; i <= endYear; i += labelInterval) {
+                var x = padding.left + (i - startYear) * xScale;
+                ctx.fillText('Year ' + i, x, layout.height - padding.bottom + 20);
+            }
+
+            // Draw drag selection overlay if active
+            var chartKey = canvasId.replace('Chart', '');
+            var cs = chartState[chartKey];
+            if (cs && cs.isDragging && cs.dragStart != null) {
+                var mouseX = cs.currentMouseX || 0;
+                var dragStartX = Math.max(padding.left, Math.min(cs.dragStart, padding.left + chartWidth));
+                var dragEndX = Math.max(padding.left, Math.min(mouseX, padding.left + chartWidth));
+                var selLeft = Math.min(dragStartX, dragEndX);
+                var selRight = Math.max(dragStartX, dragEndX);
+                ctx.fillStyle = 'rgba(3, 102, 214, 0.1)';
+                ctx.fillRect(selLeft, padding.top, selRight - selLeft, chartHeight);
+                ctx.strokeStyle = 'rgba(3, 102, 214, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(selLeft, padding.top);
+                ctx.lineTo(selLeft, padding.top + chartHeight);
+                ctx.moveTo(selRight, padding.top);
+                ctx.lineTo(selRight, padding.top + chartHeight);
+                ctx.stroke();
+                ctx.setLineDash([]);
             }
         }
 
+        function xToYear(canvasId, mouseX) {
+            var canvas = document.getElementById(canvasId);
+            var layout = getChartLayout(canvas);
+            var chartKey = canvasId.replace('Chart', '');
+            var cs = chartState[chartKey];
+            var totalPoints = 0;
+            cs.series.forEach(function(s) { if (s.points.length > totalPoints) totalPoints = s.points.length; });
+            var fullMaxYears = totalPoints - 1;
+            var startYear = cs.zoomStart != null ? cs.zoomStart : 0;
+            var endYear = cs.zoomEnd != null ? cs.zoomEnd : fullMaxYears;
+            var visibleYears = endYear - startYear;
+            if (visibleYears <= 0) return startYear;
+            var xScale = layout.chartWidth / visibleYears;
+            var relX = mouseX - layout.padding.left;
+            return Math.round(relX / xScale) + startYear;
+        }
+
+        function setupChartInteraction(chartKey) {
+            var canvasId = chartKey + 'Chart';
+            var tooltipId = chartKey + 'Tooltip';
+            var canvas = document.getElementById(canvasId);
+            var tooltip = document.getElementById(tooltipId);
+
+            canvas.addEventListener('mousemove', function(e) {
+                var rect = canvas.getBoundingClientRect();
+                var mouseX = e.clientX - rect.left;
+                var mouseY = e.clientY - rect.top;
+                var cs = chartState[chartKey];
+                var layout = getChartLayout(canvas);
+
+                // During drag, update selection overlay
+                if (cs.isDragging) {
+                    cs.currentMouseX = mouseX;
+                    drawLineChart(canvasId, cs.series, cs.zoomStart, cs.zoomEnd);
+                }
+
+                // Show tooltip
+                if (mouseX < layout.padding.left || mouseX > layout.width - layout.padding.right ||
+                    mouseY < layout.padding.top || mouseY > layout.padding.top + layout.chartHeight) {
+                    tooltip.style.display = 'none';
+                    return;
+                }
+
+                var year = xToYear(canvasId, mouseX);
+                var html = '<div class="tooltip-year">Year ' + year + '</div>';
+                var hasData = false;
+                cs.series.forEach(function(s) {
+                    if (year >= 0 && year < s.points.length) {
+                        html += '<div class="tooltip-row">';
+                        html += '<span class="tooltip-swatch" style="background:' + s.color + ';"></span>';
+                        html += '<span>' + s.label + ': ' + formatCurrency(s.points[year]) + '</span>';
+                        html += '</div>';
+                        hasData = true;
+                    }
+                });
+
+                if (!hasData) {
+                    tooltip.style.display = 'none';
+                    return;
+                }
+
+                tooltip.innerHTML = html;
+                tooltip.style.display = 'block';
+
+                // Position tooltip near cursor but within container
+                var container = canvas.parentElement;
+                var containerRect = container.getBoundingClientRect();
+                var tooltipRect = tooltip.getBoundingClientRect();
+                var left = e.clientX - containerRect.left + 15;
+                var top = e.clientY - containerRect.top - 10;
+
+                if (left + tooltipRect.width > containerRect.width - 10) {
+                    left = e.clientX - containerRect.left - tooltipRect.width - 15;
+                }
+                if (top + tooltipRect.height > containerRect.height - 10) {
+                    top = containerRect.height - tooltipRect.height - 10;
+                }
+                if (top < 0) top = 5;
+
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+
+                // Draw crosshair line
+                if (!cs.isDragging) {
+                    drawLineChart(canvasId, cs.series, cs.zoomStart, cs.zoomEnd);
+                    var ctx = canvas.getContext('2d');
+                    var dpr = window.devicePixelRatio || 1;
+                    ctx.save();
+                    ctx.scale(dpr, dpr);
+                    var totalPoints = 0;
+                    cs.series.forEach(function(s) { if (s.points.length > totalPoints) totalPoints = s.points.length; });
+                    var startYear = cs.zoomStart != null ? cs.zoomStart : 0;
+                    var endYear = cs.zoomEnd != null ? cs.zoomEnd : totalPoints - 1;
+                    var visibleYears = endYear - startYear;
+                    if (visibleYears > 0) {
+                        var xScale = layout.chartWidth / visibleYears;
+                        var snapX = layout.padding.left + (year - startYear) * xScale;
+                        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(snapX, layout.padding.top);
+                        ctx.lineTo(snapX, layout.padding.top + layout.chartHeight);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        // Draw dots on series at this year
+                        var dotMaxValue = 0;
+                        cs.series.forEach(function(s) {
+                            for (var j = startYear; j <= endYear && j < s.points.length; j++) {
+                                if (s.points[j] > dotMaxValue) dotMaxValue = s.points[j];
+                            }
+                        });
+                        if (dotMaxValue > 0) {
+                            var dotYScale = layout.chartHeight / dotMaxValue;
+                            cs.series.forEach(function(s) {
+                                if (year >= 0 && year < s.points.length) {
+                                    var dotY = layout.padding.top + layout.chartHeight - s.points[year] * dotYScale;
+                                    ctx.beginPath();
+                                    ctx.arc(snapX, dotY, 4, 0, Math.PI * 2);
+                                    ctx.fillStyle = s.color;
+                                    ctx.fill();
+                                    ctx.strokeStyle = '#fff';
+                                    ctx.lineWidth = 2;
+                                    ctx.stroke();
+                                }
+                            });
+                        }
+                    }
+                    ctx.restore();
+                }
+            });
+
+            canvas.addEventListener('mouseleave', function() {
+                tooltip.style.display = 'none';
+                var cs = chartState[chartKey];
+                if (!cs.isDragging) {
+                    drawLineChart(canvasId, cs.series, cs.zoomStart, cs.zoomEnd);
+                }
+            });
+
+            // Drag to zoom
+            canvas.addEventListener('mousedown', function(e) {
+                var rect = canvas.getBoundingClientRect();
+                var mouseX = e.clientX - rect.left;
+                var layout = getChartLayout(canvas);
+                if (mouseX >= layout.padding.left && mouseX <= layout.width - layout.padding.right) {
+                    var cs = chartState[chartKey];
+                    cs.isDragging = true;
+                    cs.dragStart = mouseX;
+                    cs.currentMouseX = mouseX;
+                }
+            });
+
+            canvas.addEventListener('mouseup', function(e) {
+                var cs = chartState[chartKey];
+                if (!cs.isDragging) return;
+                cs.isDragging = false;
+
+                var rect = canvas.getBoundingClientRect();
+                var mouseX = e.clientX - rect.left;
+                var startYear = xToYear(canvasId, Math.min(cs.dragStart, mouseX));
+                var endYear = xToYear(canvasId, Math.max(cs.dragStart, mouseX));
+
+                // Only zoom if dragged at least 2 years
+                if (endYear - startYear >= 2) {
+                    var totalPoints = 0;
+                    cs.series.forEach(function(s) { if (s.points.length > totalPoints) totalPoints = s.points.length; });
+                    cs.zoomStart = Math.max(0, startYear);
+                    cs.zoomEnd = Math.min(totalPoints - 1, endYear);
+                    document.getElementById(chartKey + 'ResetZoom').style.display = 'block';
+                }
+
+                cs.dragStart = null;
+                cs.currentMouseX = null;
+                drawLineChart(canvasId, cs.series, cs.zoomStart, cs.zoomEnd);
+            });
+        }
+
+        function resetZoom(chartKey) {
+            var cs = chartState[chartKey];
+            cs.zoomStart = null;
+            cs.zoomEnd = null;
+            document.getElementById(chartKey + 'ResetZoom').style.display = 'none';
+            drawLineChart(chartKey + 'Chart', cs.series, null, null);
+        }
+
         function renderCharts(results) {
-            // Equity chart
+            // Build series with labels for tooltips
             var equitySeries = results.map(function(r) {
                 var points = [r.downPayment];
                 r.yearly.forEach(function(y) {
                     points.push(r.downPayment + (r.loanAmount - y.balance));
                 });
-                return { points: points, color: r.color.hex };
+                return { points: points, color: r.color.hex, label: 'Scenario ' + r.label };
             });
-            drawLineChart('equityChart', equitySeries);
+            chartState.equity.series = equitySeries;
+            drawLineChart('equityChart', equitySeries, chartState.equity.zoomStart, chartState.equity.zoomEnd);
 
-            // Balance chart
             var balanceSeries = results.map(function(r) {
                 var points = [r.loanAmount];
                 r.yearly.forEach(function(y) {
                     points.push(y.balance);
                 });
-                return { points: points, color: r.color.hex };
+                return { points: points, color: r.color.hex, label: 'Scenario ' + r.label };
             });
-            drawLineChart('balanceChart', balanceSeries);
+            chartState.balance.series = balanceSeries;
+            drawLineChart('balanceChart', balanceSeries, chartState.balance.zoomStart, chartState.balance.zoomEnd);
 
             // Legends
             renderLegend('equityLegend', results);
@@ -1610,11 +1896,15 @@
                 if (e.key === 'Escape') closeOcrModal();
             });
 
-            // Window resize
+            // Window resize - reset zoom and recalculate
             var resizeTimeout;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(calculate, 100);
+                resizeTimeout = setTimeout(function() {
+                    resetZoom('equity');
+                    resetZoom('balance');
+                    calculate();
+                }, 100);
             });
         }
 
@@ -1625,6 +1915,8 @@
             renderSharedInputs();
             renderScenarios();
             setupEventDelegation();
+            setupChartInteraction('equity');
+            setupChartInteraction('balance');
             calculate();
         }
 
