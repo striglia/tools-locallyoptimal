@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortgage Comparison Calculator - Locally Optimal Tools</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+            font-size: 1.3em;
+        }
+        .intro {
+            background: #f6f8fa;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+            color: #24292e;
+        }
+        .intro p {
+            margin: 8px 0;
+        }
+
+        /* Mode toggle */
+        .mode-toggle {
+            display: inline-flex;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0 0 25px;
+            border: 1px solid #d1d5da;
+        }
+        .mode-toggle button {
+            padding: 8px 24px;
+            border: none;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            color: #586069;
+            transition: background 0.15s, color 0.15s;
+        }
+        .mode-toggle button.active {
+            background: #0366d6;
+            color: #fff;
+        }
+        .mode-toggle button:hover:not(.active) {
+            background: #f6f8fa;
+        }
+        .mode-toggle button:first-child {
+            border-right: 1px solid #d1d5da;
+        }
+
+        /* Shared inputs */
+        .shared-inputs {
+            margin: 25px 0;
+        }
+        .input-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .input-group {
+            flex: 1;
+            min-width: 180px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #24292e;
+            font-size: 0.95em;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #0366d6;
+        }
+        .input-group small {
+            color: #6a737d;
+            font-size: 0.85em;
+            display: block;
+            margin-top: 4px;
+        }
+
+        /* Scenarios grid */
+        .scenarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        /* Scenario card */
+        .scenario-card {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 20px;
+            position: relative;
+            border-top: 3px solid #e1e4e8;
+        }
+        .scenario-card.current-loan {
+            border-style: dashed;
+            border-top-style: solid;
+        }
+        .scenario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .scenario-header h3 {
+            margin: 0;
+            font-size: 1.1em;
+        }
+        .scenario-remove-btn {
+            background: none;
+            border: none;
+            font-size: 1.3em;
+            cursor: pointer;
+            color: #959da5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            line-height: 1;
+        }
+        .scenario-remove-btn:hover {
+            background: #ffeef0;
+            color: #d73a49;
+        }
+        .scenario-card .input-group {
+            min-width: unset;
+            margin-bottom: 12px;
+        }
+
+        /* Upload button */
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            color: #586069;
+            margin-top: 8px;
+        }
+        .upload-btn:hover {
+            background: #e1e4e8;
+        }
+        .upload-status {
+            font-size: 0.85em;
+            color: #586069;
+            margin-top: 4px;
+            min-height: 1.2em;
+        }
+
+        /* Add scenario */
+        .add-scenario-row {
+            text-align: center;
+            margin: 10px 0 30px;
+        }
+        .add-scenario-btn {
+            background: #f6f8fa;
+            color: #0366d6;
+            border: 1px dashed #c8e1ff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+        .add-scenario-btn:hover:not(:disabled) {
+            background: #e1e4e8;
+        }
+        .add-scenario-btn:disabled {
+            color: #959da5;
+            border-color: #e1e4e8;
+            cursor: not-allowed;
+        }
+
+        /* Summary grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: #f6f8fa;
+            padding: 15px 20px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .summary-card.winner {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+        }
+        .summary-label {
+            font-size: 0.85em;
+            color: #586069;
+            margin-bottom: 5px;
+        }
+        .summary-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #24292e;
+        }
+        .summary-card.winner .summary-value {
+            color: #276749;
+        }
+        .summary-sublabel {
+            font-size: 0.8em;
+            color: #6a737d;
+            margin-top: 3px;
+        }
+
+        /* Breakdowns */
+        .breakdowns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .breakdown-card {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .breakdown-header {
+            padding: 10px 15px;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            border-top: 1px solid #f0f0f0;
+        }
+        .breakdown-row.total {
+            font-weight: 600;
+            background: #f6f8fa;
+            border-top: 2px solid #e1e4e8;
+        }
+        .breakdown-row .label {
+            color: #586069;
+        }
+        .breakdown-row .value {
+            font-weight: 500;
+        }
+        .pmi-note {
+            font-size: 0.8em;
+            color: #d73a49;
+        }
+
+        /* Break-even */
+        .break-even-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f6f8fa;
+            border-radius: 6px;
+        }
+        .break-even-section h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+        }
+        .break-even-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .break-even-card {
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e1e4e8;
+        }
+        .break-even-months {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .break-even-detail {
+            font-size: 0.85em;
+            color: #586069;
+            margin-top: 4px;
+        }
+
+        /* Charts */
+        .chart-container {
+            background: #fff;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        canvas {
+            width: 100%;
+            height: auto;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        /* Amortization toggle */
+        .amort-toggle {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .amort-toggle button {
+            background: #f6f8fa;
+            color: #0366d6;
+            border: 1px solid #e1e4e8;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .amort-toggle button:hover {
+            background: #e1e4e8;
+        }
+        .amort-table-wrapper {
+            display: none;
+            margin: 15px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+        }
+        .amort-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            min-width: 600px;
+        }
+        .amort-table th {
+            position: sticky;
+            top: 0;
+            background: #f6f8fa;
+            font-weight: 600;
+            color: #24292e;
+            font-size: 0.9em;
+            z-index: 1;
+        }
+        .amort-table th, .amort-table td {
+            padding: 8px 10px;
+            text-align: right;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .amort-table th:first-child, .amort-table td:first-child {
+            text-align: center;
+        }
+        .amort-table thead th {
+            border-bottom: 2px solid #e1e4e8;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.visible {
+            display: flex;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e1e4e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            margin: 0;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #586069;
+            padding: 0;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: #24292e;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-body p {
+            margin-top: 0;
+            font-size: 0.9em;
+            color: #586069;
+        }
+        .modal-body textarea {
+            width: 100%;
+            min-height: 200px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 12px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .modal-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #e1e4e8;
+            text-align: right;
+        }
+        .modal-footer button {
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            background: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            color: #24292e;
+        }
+        .modal-footer button:hover {
+            background: #e1e4e8;
+        }
+
+        /* Info icon / tooltip */
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e1e4e8;
+            color: #586069;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: help;
+            margin-left: 4px;
+            position: relative;
+        }
+        .info-icon:hover .tooltip {
+            display: block;
+        }
+        .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #24292e;
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: normal;
+            width: 260px;
+            line-height: 1.5;
+            z-index: 100;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #24292e;
+        }
+
+        /* Citations */
+        .citations {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f6f8fa;
+            border-radius: 6px;
+            font-size: 0.9em;
+            line-height: 1.7;
+        }
+        .citations h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            color: #24292e;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 10px;
+        }
+        .citation-item {
+            margin: 10px 0;
+            padding-left: 20px;
+            color: #586069;
+        }
+        .citation-item a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        .citation-item a:hover {
+            text-decoration: underline;
+        }
+        .disclaimer {
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid #e1e4e8;
+            font-size: 0.85em;
+            color: #586069;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #586069;
+        }
+        footer a {
+            color: #0366d6;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+                margin: 20px auto;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .scenarios-grid {
+                grid-template-columns: 1fr;
+            }
+            .breakdowns-grid {
+                grid-template-columns: 1fr;
+            }
+            .input-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .input-group {
+                min-width: 100%;
+            }
+            .summary-value {
+                font-size: 1.5em;
+            }
+            .legend {
+                flex-direction: column;
+                align-items: center;
+            }
+            .mode-toggle {
+                width: 100%;
+            }
+            .mode-toggle button {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Mortgage Comparison Calculator</h1>
+
+    <div class="intro">
+        <p>Compare up to four mortgage scenarios side by side. See monthly payments, total costs, and how your equity builds over time. Switch to refinance mode to evaluate refinancing options with break-even analysis.</p>
+        <p><em>All calculations happen in your browser. No data is sent anywhere.</em></p>
+    </div>
+
+    <div class="mode-toggle">
+        <button class="active" data-mode="new-loan">New Loan</button>
+        <button data-mode="refinance">Refinance</button>
+    </div>
+
+    <h2>Property Details</h2>
+    <div class="shared-inputs" id="sharedInputsContent"></div>
+
+    <h2>Loan Scenarios</h2>
+    <div id="scenariosContainer"></div>
+
+    <div class="add-scenario-row">
+        <button class="add-scenario-btn" id="addScenarioBtn" onclick="addScenario()">+ Add Scenario</button>
+    </div>
+
+    <div id="results">
+        <h2>Monthly Payment Comparison</h2>
+        <div id="summaryCards" class="summary-grid"></div>
+        <div id="breakdownContainer" class="breakdowns-grid"></div>
+
+        <div id="breakEvenSection" class="break-even-section" style="display:none"></div>
+
+        <h2>Total Cost Over Loan Life</h2>
+        <div id="totalCostCards" class="summary-grid"></div>
+
+        <h2>Equity Build-Up Over Time</h2>
+        <div class="chart-container">
+            <canvas id="equityChart" width="860" height="350"></canvas>
+            <div id="equityLegend" class="legend"></div>
+        </div>
+
+        <h2>Remaining Balance Over Time</h2>
+        <div class="chart-container">
+            <canvas id="balanceChart" width="860" height="350"></canvas>
+            <div id="balanceLegend" class="legend"></div>
+        </div>
+
+        <div class="amort-toggle">
+            <button onclick="toggleAmortTable()">Show Year-by-Year Amortization Table</button>
+        </div>
+        <div class="amort-table-wrapper" id="amortTableWrapper">
+            <table class="amort-table">
+                <thead id="amortHead"></thead>
+                <tbody id="amortBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="citations">
+        <h3>Notes &amp; Assumptions</h3>
+        <div class="citation-item">
+            <strong>PMI:</strong> Private Mortgage Insurance is estimated at 0.5% of the loan amount annually when down payment is less than 20%. PMI is removed once equity reaches 20% of the original home price. Actual PMI rates vary by credit score and loan-to-value ratio (typically 0.3%-1.5%).
+            <a href="https://www.consumerfinance.gov/ask-cfpb/what-is-private-mortgage-insurance-en-122/" target="_blank">CFPB: What is PMI?</a>
+        </div>
+        <div class="citation-item">
+            <strong>Property Tax:</strong> California's base property tax rate is 1% (Prop 13), plus local assessments. SF County effective rate is approximately 1.18%.
+            <a href="https://sftreasurer.org/property/property-taxes" target="_blank">SF Treasurer: Property Taxes</a>
+        </div>
+        <div class="citation-item">
+            <strong>Monthly Payment Formula:</strong> M = P[r(1+r)<sup>n</sup>] / [(1+r)<sup>n</sup> - 1], where P = principal, r = monthly rate, n = total payments.
+            <a href="https://www.consumerfinance.gov/owning-a-home/" target="_blank">CFPB: Owning a Home</a>
+        </div>
+        <div class="citation-item">
+            <strong>Closing Costs:</strong> Included in total cost calculations. Typical closing costs range from 2-5% of the loan amount.
+            <a href="https://www.consumerfinance.gov/owning-a-home/closing/" target="_blank">CFPB: Closing</a>
+        </div>
+        <div class="citation-item">
+            <strong>OCR Upload:</strong> Loan estimate parsing uses <a href="https://tesseract.projectnaptha.com/" target="_blank">Tesseract.js</a> for optical character recognition. Supports PNG/JPG images of CFPB-standardized loan estimate documents. Extracted fields should be verified manually.
+        </div>
+        <p class="disclaimer"><em>This calculator provides estimates for comparison purposes only. Actual mortgage terms, rates, and costs will vary. Consult a mortgage professional for precise quotes. Does not account for points or potential rate changes on adjustable-rate mortgages.</em></p>
+    </div>
+
+    <!-- OCR Fallback Modal -->
+    <div id="ocrModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Extracted Text</h3>
+                <button class="modal-close" onclick="closeOcrModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Automatic field extraction failed. The raw text from your loan estimate is shown below. You can copy values manually into the scenario fields.</p>
+                <textarea id="ocrModalText" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeOcrModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p><a href="index.html">&larr; Back to tools</a></p>
+    </footer>
+
+    <script>
+        // ===== CONSTANTS =====
+        const SCENARIO_COLORS = [
+            { hex: '#0366d6', bg: '#f0f6ff', border: '#c8ddf8' },
+            { hex: '#6f42c1', bg: '#f5f0ff', border: '#d8ccf0' },
+            { hex: '#0e8a6e', bg: '#f0faf6', border: '#b8e6d4' },
+            { hex: '#d15704', bg: '#fff5f0', border: '#f0d0b8' }
+        ];
+        const SCENARIO_LABELS = ['A', 'B', 'C', 'D'];
+        const MAX_SCENARIOS = 4;
+        const MIN_SCENARIOS = 2;
+        const PMI_ANNUAL_RATE = 0.005;
+
+        // ===== STATE =====
+        let state = {
+            mode: 'new-loan',
+            shared: {
+                homePrice: 1500000,
+                propertyTaxRate: 1.18,
+                homeInsurance: 2400,
+                hoaFees: 0
+            },
+            scenarios: [
+                { id: 1, downPaymentPct: 20, interestRate: 6.5, loanTerm: 30, extraPayment: 0, closingCosts: 0 },
+                { id: 2, downPaymentPct: 20, interestRate: 5.875, loanTerm: 15, extraPayment: 0, closingCosts: 0 }
+            ],
+            nextId: 3,
+            amortTableVisible: false
+        };
+
+        // ===== UTILITY FUNCTIONS =====
+        function parseNum(value, defaultVal) {
+            const parsed = parseFloat(value);
+            return isNaN(parsed) ? defaultVal : parsed;
+        }
+
+        function formatCurrency(amount) {
+            if (Math.abs(amount) >= 1000000) {
+                return '$' + (amount / 1000000).toFixed(2) + 'M';
+            }
+            return '$' + Math.round(amount).toLocaleString('en-US');
+        }
+
+        function debounce(fn, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        // ===== MORTGAGE CALCULATIONS =====
+        function calculateMonthlyPI(principal, annualRate, termYears) {
+            if (principal <= 0) return 0;
+            const monthlyRate = annualRate / 100 / 12;
+            const numPayments = termYears * 12;
+            if (monthlyRate === 0) return principal / numPayments;
+            const factor = Math.pow(1 + monthlyRate, numPayments);
+            return principal * (monthlyRate * factor) / (factor - 1);
+        }
+
+        function calculatePMI(loanAmount) {
+            return (loanAmount * PMI_ANNUAL_RATE) / 12;
+        }
+
+        function amortize(principal, annualRate, termYears, extraMonthly) {
+            const monthlyRate = annualRate / 100 / 12;
+            const basePayment = calculateMonthlyPI(principal, annualRate, termYears);
+            const numPayments = termYears * 12;
+
+            let balance = principal;
+            const schedule = [];
+            let totalInterest = 0;
+            let totalPrincipal = 0;
+
+            for (let month = 1; month <= numPayments && balance > 0; month++) {
+                const interestPayment = balance * monthlyRate;
+                let principalPayment = basePayment - interestPayment + extraMonthly;
+                if (principalPayment > balance) principalPayment = balance;
+
+                balance -= principalPayment;
+                if (balance < 0.01) balance = 0;
+
+                totalInterest += interestPayment;
+                totalPrincipal += principalPayment;
+
+                schedule.push({
+                    month, principal: principalPayment, interest: interestPayment,
+                    balance, totalInterest, totalPrincipal
+                });
+            }
+
+            return { schedule, totalInterest, basePayment };
+        }
+
+        function yearlyFromSchedule(schedule) {
+            const yearly = [];
+            let yearPrincipal = 0, yearInterest = 0;
+
+            for (let i = 0; i < schedule.length; i++) {
+                yearPrincipal += schedule[i].principal;
+                yearInterest += schedule[i].interest;
+
+                if ((i + 1) % 12 === 0 || i === schedule.length - 1) {
+                    yearly.push({
+                        year: yearly.length + 1,
+                        balance: schedule[i].balance,
+                        principalPaid: yearPrincipal,
+                        interestPaid: yearInterest,
+                        totalInterest: schedule[i].totalInterest
+                    });
+                    yearPrincipal = 0;
+                    yearInterest = 0;
+                }
+            }
+            return yearly;
+        }
+
+        // ===== STATE MANAGEMENT =====
+        function addScenario() {
+            if (state.scenarios.length >= MAX_SCENARIOS) return;
+
+            const newScenario = state.mode === 'refinance'
+                ? { id: state.nextId, isCurrentLoan: false, interestRate: 5.5, loanTerm: 30, extraPayment: 0, closingCosts: 15000 }
+                : { id: state.nextId, downPaymentPct: 20, interestRate: 6.0, loanTerm: 30, extraPayment: 0, closingCosts: 0 };
+
+            state.scenarios.push(newScenario);
+            state.nextId++;
+            renderScenarios();
+            calculate();
+        }
+
+        function removeScenario(id) {
+            if (state.scenarios.length <= MIN_SCENARIOS) return;
+            const scenario = state.scenarios.find(s => s.id === id);
+            if (scenario && scenario.isCurrentLoan) return;
+
+            state.scenarios = state.scenarios.filter(s => s.id !== id);
+            renderScenarios();
+            calculate();
+        }
+
+        function switchMode(mode) {
+            if (mode === state.mode) return;
+            state.mode = mode;
+
+            document.querySelectorAll('.mode-toggle button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            if (mode === 'refinance') {
+                state.scenarios = [
+                    { id: state.nextId++, isCurrentLoan: true, loanBalance: Math.round(state.shared.homePrice * 0.8), interestRate: 6.5, remainingTerm: 25, extraPayment: 0, closingCosts: 0 },
+                    { id: state.nextId++, isCurrentLoan: false, interestRate: 5.5, loanTerm: 30, extraPayment: 0, closingCosts: 15000 }
+                ];
+            } else {
+                state.scenarios = [
+                    { id: state.nextId++, downPaymentPct: 20, interestRate: 6.5, loanTerm: 30, extraPayment: 0, closingCosts: 0 },
+                    { id: state.nextId++, downPaymentPct: 20, interestRate: 5.875, loanTerm: 15, extraPayment: 0, closingCosts: 0 }
+                ];
+            }
+
+            renderSharedInputs();
+            renderScenarios();
+            calculate();
+        }
+
+        function updateSharedField(field, value) {
+            state.shared[field] = parseNum(value, 0);
+        }
+
+        function updateScenarioField(id, field, value) {
+            const scenario = state.scenarios.find(s => s.id === id);
+            if (!scenario) return;
+
+            if (field === 'loanTerm' || field === 'remainingTerm') {
+                scenario[field] = parseInt(value) || 30;
+            } else {
+                scenario[field] = parseNum(value, 0);
+            }
+        }
+
+        // ===== RENDERING: SHARED INPUTS =====
+        function renderSharedInputs() {
+            const container = document.getElementById('sharedInputsContent');
+            const s = state.shared;
+            const priceLabel = state.mode === 'refinance' ? 'Current Home Value ($)' : 'Home Price ($)';
+            const priceHint = state.mode === 'refinance' ? 'Estimated current market value' : '';
+
+            container.innerHTML = `
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>${priceLabel}</label>
+                        <input type="number" data-shared-field="homePrice" value="${s.homePrice}" min="0" step="10000">
+                        ${priceHint ? '<small>' + priceHint + '</small>' : ''}
+                    </div>
+                    <div class="input-group">
+                        <label>
+                            Property Tax Rate (%)
+                            <span class="info-icon">?
+                                <span class="tooltip">Annual property tax as a percentage of home value. California averages ~1.1%, but can vary by county. SF is typically 1.1-1.2%.</span>
+                            </span>
+                        </label>
+                        <input type="number" data-shared-field="propertyTaxRate" value="${s.propertyTaxRate}" min="0" max="5" step="0.01">
+                        <small>SF County average: ~1.18%</small>
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Homeowner's Insurance ($/year)</label>
+                        <input type="number" data-shared-field="homeInsurance" value="${s.homeInsurance}" min="0" step="100">
+                        <small>Typical SF: $1,500-$3,000/year</small>
+                    </div>
+                    <div class="input-group">
+                        <label>HOA Fees ($/month)</label>
+                        <input type="number" data-shared-field="hoaFees" value="${s.hoaFees}" min="0" step="50">
+                        <small>If applicable (condos, townhomes)</small>
+                    </div>
+                </div>`;
+        }
+
+        // ===== RENDERING: SCENARIOS =====
+        function makeInputGroup(label, scenarioId, field, value, type, attrs, hint) {
+            const attrStr = attrs ? Object.entries(attrs).map(([k, v]) => k + '="' + v + '"').join(' ') : '';
+            let html = '<div class="input-group"><label>' + label + '</label>';
+            html += '<input type="' + type + '" data-scenario-id="' + scenarioId + '" data-field="' + field + '" value="' + value + '" ' + attrStr + '>';
+            if (hint) html += '<small>' + hint + '</small>';
+            html += '</div>';
+            return html;
+        }
+
+        function makeSelectGroup(label, scenarioId, field, value, options) {
+            let html = '<div class="input-group"><label>' + label + '</label>';
+            html += '<select data-scenario-id="' + scenarioId + '" data-field="' + field + '">';
+            options.forEach(function(opt) {
+                html += '<option value="' + opt.value + '"' + (opt.value == value ? ' selected' : '') + '>' + opt.label + '</option>';
+            });
+            html += '</select></div>';
+            return html;
+        }
+
+        function renderScenarios() {
+            const container = document.getElementById('scenariosContainer');
+
+            // Preserve focus for restore after re-render
+            const activeEl = document.activeElement;
+            const activeScenarioId = activeEl && activeEl.dataset ? activeEl.dataset.scenarioId : null;
+            const activeField = activeEl && activeEl.dataset ? activeEl.dataset.field : null;
+            const cursorPos = activeEl ? activeEl.selectionStart : null;
+
+            const termOptions = [
+                { value: 30, label: '30-year fixed' },
+                { value: 20, label: '20-year fixed' },
+                { value: 15, label: '15-year fixed' },
+                { value: 10, label: '10-year fixed' }
+            ];
+            const remainingTermOptions = [
+                { value: 30, label: '30 years' }, { value: 25, label: '25 years' },
+                { value: 20, label: '20 years' }, { value: 15, label: '15 years' },
+                { value: 10, label: '10 years' }, { value: 5, label: '5 years' }
+            ];
+
+            let html = '<div class="scenarios-grid">';
+
+            state.scenarios.forEach(function(scenario, index) {
+                const color = SCENARIO_COLORS[index];
+                const label = SCENARIO_LABELS[index];
+                const canRemove = state.scenarios.length > MIN_SCENARIOS && !scenario.isCurrentLoan;
+
+                html += '<div class="scenario-card' + (scenario.isCurrentLoan ? ' current-loan' : '') + '" style="border-top-color: ' + color.hex + ';">';
+
+                // Header
+                html += '<div class="scenario-header">';
+                html += '<h3 style="color: ' + color.hex + ';">Scenario ' + label + (scenario.isCurrentLoan ? ' &mdash; Current Loan' : '') + '</h3>';
+                if (canRemove) {
+                    html += '<button class="scenario-remove-btn" data-remove-id="' + scenario.id + '" title="Remove scenario">&times;</button>';
+                }
+                html += '</div>';
+
+                // Fields by mode
+                if (state.mode === 'refinance' && scenario.isCurrentLoan) {
+                    html += makeInputGroup('Current Balance ($)', scenario.id, 'loanBalance', scenario.loanBalance || 0, 'number', { min: 0, step: 10000 });
+                    html += makeInputGroup('Interest Rate (%)', scenario.id, 'interestRate', scenario.interestRate || 0, 'number', { min: 0, max: 15, step: 0.125 });
+                    html += makeSelectGroup('Remaining Term', scenario.id, 'remainingTerm', scenario.remainingTerm || 25, remainingTermOptions);
+                    html += makeInputGroup('Extra Monthly Payment ($)', scenario.id, 'extraPayment', scenario.extraPayment || 0, 'number', { min: 0, step: 100 }, 'Additional principal each month');
+                } else if (state.mode === 'refinance') {
+                    html += makeInputGroup('Interest Rate (%)', scenario.id, 'interestRate', scenario.interestRate || 0, 'number', { min: 0, max: 15, step: 0.125 });
+                    html += makeSelectGroup('Loan Term', scenario.id, 'loanTerm', scenario.loanTerm || 30, termOptions);
+                    html += makeInputGroup('Closing Costs ($)', scenario.id, 'closingCosts', scenario.closingCosts || 0, 'number', { min: 0, step: 1000 });
+                    html += makeInputGroup('Extra Monthly Payment ($)', scenario.id, 'extraPayment', scenario.extraPayment || 0, 'number', { min: 0, step: 100 }, 'Additional principal each month');
+                    // Upload button
+                    html += '<label class="upload-btn">';
+                    html += '<span>&#128196; Upload Loan Estimate</span>';
+                    html += '<input type="file" accept="image/png,image/jpeg" data-upload-id="' + scenario.id + '" style="display:none;">';
+                    html += '</label>';
+                    html += '<div class="upload-status" id="uploadStatus-' + scenario.id + '"></div>';
+                } else {
+                    // New loan mode
+                    html += makeInputGroup('Down Payment (%)', scenario.id, 'downPaymentPct', scenario.downPaymentPct || 0, 'number', { min: 0, max: 100, step: 1 });
+                    html += makeInputGroup('Interest Rate (%)', scenario.id, 'interestRate', scenario.interestRate || 0, 'number', { min: 0, max: 15, step: 0.125 });
+                    html += makeSelectGroup('Loan Term', scenario.id, 'loanTerm', scenario.loanTerm || 30, termOptions);
+                    html += makeInputGroup('Closing Costs ($)', scenario.id, 'closingCosts', scenario.closingCosts || 0, 'number', { min: 0, step: 1000 });
+                    html += makeInputGroup('Extra Monthly Payment ($)', scenario.id, 'extraPayment', scenario.extraPayment || 0, 'number', { min: 0, step: 100 }, 'Additional principal each month');
+                    // Upload button
+                    html += '<label class="upload-btn">';
+                    html += '<span>&#128196; Upload Loan Estimate</span>';
+                    html += '<input type="file" accept="image/png,image/jpeg" data-upload-id="' + scenario.id + '" style="display:none;">';
+                    html += '</label>';
+                    html += '<div class="upload-status" id="uploadStatus-' + scenario.id + '"></div>';
+                }
+
+                html += '</div>';
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+
+            // Update add button state
+            const addBtn = document.getElementById('addScenarioBtn');
+            if (addBtn) {
+                addBtn.disabled = state.scenarios.length >= MAX_SCENARIOS;
+            }
+
+            // Restore focus
+            if (activeScenarioId && activeField) {
+                const restored = container.querySelector('[data-scenario-id="' + activeScenarioId + '"][data-field="' + activeField + '"]');
+                if (restored) {
+                    restored.focus();
+                    if (typeof cursorPos === 'number' && restored.setSelectionRange) {
+                        try { restored.setSelectionRange(cursorPos, cursorPos); } catch(e) {}
+                    }
+                }
+            }
+        }
+
+        // ===== CALCULATE =====
+        function calculate() {
+            const shared = state.shared;
+            const homePrice = Math.max(0, shared.homePrice);
+            const propertyTaxRate = Math.max(0, Math.min(5, shared.propertyTaxRate));
+            const homeInsurance = Math.max(0, shared.homeInsurance);
+            const hoaFees = Math.max(0, shared.hoaFees);
+
+            const monthlyTax = (homePrice * propertyTaxRate / 100) / 12;
+            const monthlyInsurance = homeInsurance / 12;
+            const monthlyHOA = hoaFees;
+
+            const results = state.scenarios.map(function(scenario, index) {
+                var loanAmount, downPayment, termYears, rate, extra, closingCosts;
+
+                if (state.mode === 'refinance') {
+                    if (scenario.isCurrentLoan) {
+                        loanAmount = Math.max(0, scenario.loanBalance || 0);
+                        downPayment = homePrice - loanAmount;
+                        termYears = scenario.remainingTerm || 25;
+                        rate = Math.max(0, Math.min(15, scenario.interestRate || 0));
+                        extra = Math.max(0, scenario.extraPayment || 0);
+                        closingCosts = 0;
+                    } else {
+                        var currentLoan = state.scenarios.find(function(s) { return s.isCurrentLoan; });
+                        loanAmount = currentLoan ? Math.max(0, currentLoan.loanBalance || 0) : 0;
+                        downPayment = homePrice - loanAmount;
+                        termYears = scenario.loanTerm || 30;
+                        rate = Math.max(0, Math.min(15, scenario.interestRate || 0));
+                        extra = Math.max(0, scenario.extraPayment || 0);
+                        closingCosts = Math.max(0, scenario.closingCosts || 0);
+                    }
+                } else {
+                    var dpPct = Math.max(0, Math.min(100, scenario.downPaymentPct || 0));
+                    downPayment = homePrice * dpPct / 100;
+                    loanAmount = homePrice - downPayment;
+                    termYears = scenario.loanTerm || 30;
+                    rate = Math.max(0, Math.min(15, scenario.interestRate || 0));
+                    extra = Math.max(0, scenario.extraPayment || 0);
+                    closingCosts = Math.max(0, scenario.closingCosts || 0);
+                }
+
+                var amort = amortize(loanAmount, rate, termYears, extra);
+                var yearly = yearlyFromSchedule(amort.schedule);
+
+                var hasPMI = state.mode === 'new-loan' && (scenario.downPaymentPct || 0) < 20;
+                var monthlyPMI = hasPMI ? calculatePMI(loanAmount) : 0;
+                var monthlyPI = amort.basePayment + extra;
+                var totalMonthly = monthlyPI + monthlyTax + monthlyInsurance + monthlyHOA + monthlyPMI;
+
+                return {
+                    scenarioId: scenario.id,
+                    index: index,
+                    label: SCENARIO_LABELS[index],
+                    color: SCENARIO_COLORS[index],
+                    isCurrentLoan: scenario.isCurrentLoan || false,
+                    loanAmount: loanAmount,
+                    downPayment: downPayment,
+                    rate: rate,
+                    termYears: termYears,
+                    basePayment: amort.basePayment,
+                    monthlyPI: monthlyPI,
+                    monthlyTax: monthlyTax,
+                    monthlyInsurance: monthlyInsurance,
+                    monthlyHOA: monthlyHOA,
+                    monthlyPMI: monthlyPMI,
+                    hasPMI: hasPMI,
+                    totalMonthly: totalMonthly,
+                    totalInterest: amort.totalInterest,
+                    totalCost: amort.totalInterest + closingCosts,
+                    closingCosts: closingCosts,
+                    yearly: yearly
+                };
+            });
+
+            renderSummaryCards(results);
+            renderBreakdowns(results);
+            renderTotalCostCards(results);
+            renderBreakEven(results);
+            renderCharts(results);
+            renderAmortTable(results);
+        }
+
+        // ===== RENDERING: RESULTS =====
+        function renderSummaryCards(results) {
+            var html = '';
+
+            results.forEach(function(r) {
+                html += '<div class="summary-card" style="background: ' + r.color.bg + '; border: 1px solid ' + r.color.border + ';">';
+                html += '<div class="summary-label">Scenario ' + r.label + (r.isCurrentLoan ? ' (Current)' : '') + ' &mdash; Monthly</div>';
+                html += '<div class="summary-value" style="color: ' + r.color.hex + ';">' + formatCurrency(r.totalMonthly) + '</div>';
+                html += '<div class="summary-sublabel">' + r.termYears + '-year at ' + r.rate + '%</div>';
+                html += '</div>';
+            });
+
+            if (results.length >= 2) {
+                var sorted = results.slice().sort(function(a, b) { return a.totalMonthly - b.totalMonthly; });
+                var cheapest = sorted[0];
+                var diff = sorted[1].totalMonthly - sorted[0].totalMonthly;
+                html += '<div class="summary-card winner">';
+                html += '<div class="summary-label">Scenario ' + cheapest.label + ' saves/month</div>';
+                html += '<div class="summary-value">' + formatCurrency(diff) + '</div>';
+                html += '<div class="summary-sublabel">' + formatCurrency(diff * 12) + '/year less</div>';
+                html += '</div>';
+            }
+
+            document.getElementById('summaryCards').innerHTML = html;
+        }
+
+        function renderBreakdowns(results) {
+            var html = '';
+
+            results.forEach(function(r) {
+                html += '<div class="breakdown-card">';
+                html += '<div class="breakdown-header" style="background: ' + r.color.bg + '; color: ' + r.color.hex + ';">Scenario ' + r.label + (r.isCurrentLoan ? ' (Current)' : '') + ' Breakdown</div>';
+                html += '<div class="breakdown-row"><span class="label">Principal & Interest</span><span class="value">' + formatCurrency(r.monthlyPI) + '</span></div>';
+                html += '<div class="breakdown-row"><span class="label">Property Tax</span><span class="value">' + formatCurrency(r.monthlyTax) + '</span></div>';
+                html += '<div class="breakdown-row"><span class="label">Insurance</span><span class="value">' + formatCurrency(r.monthlyInsurance) + '</span></div>';
+
+                if (r.monthlyHOA > 0) {
+                    html += '<div class="breakdown-row"><span class="label">HOA</span><span class="value">' + formatCurrency(r.monthlyHOA) + '</span></div>';
+                }
+                if (r.hasPMI) {
+                    html += '<div class="breakdown-row"><span class="label">PMI <span class="pmi-note">(until 20% equity)</span></span><span class="value">' + formatCurrency(r.monthlyPMI) + '</span></div>';
+                }
+                if (r.closingCosts > 0) {
+                    html += '<div class="breakdown-row"><span class="label">Closing Costs (one-time)</span><span class="value">' + formatCurrency(r.closingCosts) + '</span></div>';
+                }
+
+                html += '<div class="breakdown-row total"><span class="label">Total Monthly</span><span class="value">' + formatCurrency(r.totalMonthly) + '</span></div>';
+                html += '</div>';
+            });
+
+            document.getElementById('breakdownContainer').innerHTML = html;
+        }
+
+        function renderTotalCostCards(results) {
+            var html = '';
+
+            results.forEach(function(r) {
+                var sublabel = r.closingCosts > 0
+                    ? 'Interest + closing costs on ' + formatCurrency(r.loanAmount) + ' loan'
+                    : 'Interest on ' + formatCurrency(r.loanAmount) + ' loan';
+                html += '<div class="summary-card" style="background: ' + r.color.bg + '; border: 1px solid ' + r.color.border + ';">';
+                html += '<div class="summary-label">Scenario ' + r.label + (r.isCurrentLoan ? ' (Current)' : '') + ' &mdash; Total Cost</div>';
+                html += '<div class="summary-value" style="color: ' + r.color.hex + ';">' + formatCurrency(r.totalCost) + '</div>';
+                html += '<div class="summary-sublabel">' + sublabel + '</div>';
+                html += '</div>';
+            });
+
+            if (results.length >= 2) {
+                var sorted = results.slice().sort(function(a, b) { return a.totalCost - b.totalCost; });
+                var cheapest = sorted[0];
+                var diff = sorted[1].totalCost - sorted[0].totalCost;
+                var hasClosingCosts = results.some(function(r) { return r.closingCosts > 0; });
+                html += '<div class="summary-card winner">';
+                html += '<div class="summary-label">Scenario ' + cheapest.label + ' saves total</div>';
+                html += '<div class="summary-value">' + formatCurrency(diff) + '</div>';
+                html += '<div class="summary-sublabel">in total interest' + (hasClosingCosts ? ' + closing costs' : '') + '</div>';
+                html += '</div>';
+            }
+
+            document.getElementById('totalCostCards').innerHTML = html;
+        }
+
+        function renderBreakEven(results) {
+            var section = document.getElementById('breakEvenSection');
+            if (state.mode !== 'refinance') {
+                section.style.display = 'none';
+                return;
+            }
+
+            var currentLoan = results.find(function(r) { return r.isCurrentLoan; });
+            var refiOptions = results.filter(function(r) { return !r.isCurrentLoan; });
+
+            if (!currentLoan || refiOptions.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            var html = '<h3>Break-Even Analysis</h3><div class="break-even-grid">';
+
+            refiOptions.forEach(function(refi) {
+                // Compare base P&I payments (without extra) for break-even
+                var monthlySavings = currentLoan.basePayment - refi.basePayment;
+
+                if (monthlySavings <= 0) {
+                    html += '<div class="break-even-card" style="border-left: 3px solid ' + refi.color.hex + ';">';
+                    html += '<div class="summary-label">Scenario ' + refi.label + ' vs Current</div>';
+                    html += '<div class="break-even-months" style="color: #d73a49;">No break-even</div>';
+                    html += '<div class="break-even-detail">Higher required payment by ' + formatCurrency(Math.abs(monthlySavings)) + '/mo</div>';
+                    html += '</div>';
+                } else {
+                    var breakEvenMonths = Math.ceil(refi.closingCosts / monthlySavings);
+                    var years = Math.floor(breakEvenMonths / 12);
+                    var months = breakEvenMonths % 12;
+                    var timeStr = years > 0 ? years + 'y ' + months + 'm' : breakEvenMonths + ' months';
+
+                    html += '<div class="break-even-card" style="border-left: 3px solid ' + refi.color.hex + ';">';
+                    html += '<div class="summary-label">Scenario ' + refi.label + ' vs Current</div>';
+                    html += '<div class="break-even-months" style="color: ' + refi.color.hex + ';">' + timeStr + '</div>';
+                    html += '<div class="break-even-detail">Save ' + formatCurrency(monthlySavings) + '/mo, recoup ' + formatCurrency(refi.closingCosts) + ' closing costs</div>';
+                    html += '</div>';
+                }
+            });
+
+            html += '</div>';
+            section.innerHTML = html;
+        }
+
+        // ===== CHARTS =====
+        function drawLineChart(canvasId, seriesArray) {
+            var canvas = document.getElementById(canvasId);
+            var ctx = canvas.getContext('2d');
+            var dpr = window.devicePixelRatio || 1;
+
+            var rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            var width = rect.width;
+            var height = rect.height;
+            var padding = { top: 20, right: 20, bottom: 40, left: 80 };
+            var chartWidth = width - padding.left - padding.right;
+            var chartHeight = height - padding.top - padding.bottom;
+
+            ctx.clearRect(0, 0, width, height);
+
+            var maxPoints = 0;
+            var maxValue = 0;
+            seriesArray.forEach(function(s) {
+                if (s.points.length > maxPoints) maxPoints = s.points.length;
+                s.points.forEach(function(v) {
+                    if (v > maxValue) maxValue = v;
+                });
+            });
+
+            if (maxValue === 0 || maxPoints <= 1) return;
+
+            var maxYears = maxPoints - 1;
+            var yScale = chartHeight / maxValue;
+            var xScale = chartWidth / maxYears;
+
+            // Grid lines
+            ctx.strokeStyle = '#e1e4e8';
+            ctx.lineWidth = 1;
+            var numGridLines = 5;
+            for (var i = 0; i <= numGridLines; i++) {
+                var y = padding.top + (chartHeight * i / numGridLines);
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(width - padding.right, y);
+                ctx.stroke();
+
+                var value = maxValue * (1 - i / numGridLines);
+                ctx.fillStyle = '#586069';
+                ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
+            }
+
+            // Draw each series
+            seriesArray.forEach(function(series) {
+                ctx.strokeStyle = series.color;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                for (var i = 0; i < series.points.length; i++) {
+                    var x = padding.left + i * xScale;
+                    var yVal = padding.top + chartHeight - series.points[i] * yScale;
+                    if (i === 0) ctx.moveTo(x, yVal);
+                    else ctx.lineTo(x, yVal);
+                }
+                ctx.stroke();
+            });
+
+            // X-axis labels
+            ctx.fillStyle = '#586069';
+            ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'center';
+            var labelInterval = maxYears <= 10 ? 1 : maxYears <= 20 ? 5 : 10;
+            for (var i = 0; i <= maxYears; i += labelInterval) {
+                var x = padding.left + i * xScale;
+                ctx.fillText('Year ' + i, x, height - padding.bottom + 20);
+            }
+        }
+
+        function renderCharts(results) {
+            // Equity chart
+            var equitySeries = results.map(function(r) {
+                var points = [r.downPayment];
+                r.yearly.forEach(function(y) {
+                    points.push(r.downPayment + (r.loanAmount - y.balance));
+                });
+                return { points: points, color: r.color.hex };
+            });
+            drawLineChart('equityChart', equitySeries);
+
+            // Balance chart
+            var balanceSeries = results.map(function(r) {
+                var points = [r.loanAmount];
+                r.yearly.forEach(function(y) {
+                    points.push(y.balance);
+                });
+                return { points: points, color: r.color.hex };
+            });
+            drawLineChart('balanceChart', balanceSeries);
+
+            // Legends
+            renderLegend('equityLegend', results);
+            renderLegend('balanceLegend', results);
+        }
+
+        function renderLegend(containerId, results) {
+            document.getElementById(containerId).innerHTML = results.map(function(r) {
+                return '<div class="legend-item">' +
+                    '<div class="legend-color" style="background: ' + r.color.hex + ';"></div>' +
+                    '<span>Scenario ' + r.label + (r.isCurrentLoan ? ' (Current)' : '') + '</span>' +
+                    '</div>';
+            }).join('');
+        }
+
+        // ===== AMORTIZATION TABLE =====
+        function renderAmortTable(results) {
+            // Header
+            var headerHtml = '<tr><th>Year</th>';
+            results.forEach(function(r) {
+                headerHtml += '<th style="color: ' + r.color.hex + ';">' + r.label + ': Balance</th>';
+                headerHtml += '<th style="color: ' + r.color.hex + ';">' + r.label + ': Principal</th>';
+                headerHtml += '<th style="color: ' + r.color.hex + ';">' + r.label + ': Interest</th>';
+            });
+            headerHtml += '</tr>';
+            document.getElementById('amortHead').innerHTML = headerHtml;
+
+            // Body
+            var maxYears = 0;
+            results.forEach(function(r) {
+                if (r.yearly.length > maxYears) maxYears = r.yearly.length;
+            });
+
+            var bodyHtml = '';
+            for (var i = 0; i < maxYears; i++) {
+                bodyHtml += '<tr><td>' + (i + 1) + '</td>';
+                results.forEach(function(r) {
+                    var y = r.yearly[i];
+                    if (y) {
+                        bodyHtml += '<td style="color: ' + r.color.hex + ';">' + formatCurrency(y.balance) + '</td>';
+                        bodyHtml += '<td style="color: ' + r.color.hex + ';">' + formatCurrency(y.principalPaid) + '</td>';
+                        bodyHtml += '<td style="color: ' + r.color.hex + ';">' + formatCurrency(y.interestPaid) + '</td>';
+                    } else {
+                        bodyHtml += '<td style="color: ' + r.color.hex + ';">Paid off</td>';
+                        bodyHtml += '<td style="color: ' + r.color.hex + ';">-</td>';
+                        bodyHtml += '<td style="color: ' + r.color.hex + ';">-</td>';
+                    }
+                });
+                bodyHtml += '</tr>';
+            }
+            document.getElementById('amortBody').innerHTML = bodyHtml;
+        }
+
+        function toggleAmortTable() {
+            state.amortTableVisible = !state.amortTableVisible;
+            var wrapper = document.getElementById('amortTableWrapper');
+            var btn = document.querySelector('.amort-toggle button');
+            wrapper.style.display = state.amortTableVisible ? 'block' : 'none';
+            btn.textContent = (state.amortTableVisible ? 'Hide' : 'Show') + ' Year-by-Year Amortization Table';
+        }
+
+        // ===== OCR =====
+        var tesseractLoaded = false;
+
+        function loadTesseract() {
+            return new Promise(function(resolve, reject) {
+                if (tesseractLoaded) { resolve(); return; }
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+                script.onload = function() { tesseractLoaded = true; resolve(); };
+                script.onerror = function() { reject(new Error('Failed to load Tesseract.js')); };
+                document.head.appendChild(script);
+            });
+        }
+
+        function handleFileUpload(scenarioId, file) {
+            var statusEl = document.getElementById('uploadStatus-' + scenarioId);
+            if (!statusEl) return;
+
+            statusEl.textContent = 'Loading OCR engine...';
+            statusEl.style.color = '#586069';
+
+            loadTesseract().then(function() {
+                statusEl.textContent = 'Processing image...';
+                return Tesseract.createWorker('eng', 1, {
+                    logger: function(m) {
+                        if (m.status === 'recognizing text') {
+                            statusEl.textContent = 'Recognizing... ' + Math.round(m.progress * 100) + '%';
+                        }
+                    }
+                });
+            }).then(function(worker) {
+                var imageUrl = URL.createObjectURL(file);
+                return worker.recognize(imageUrl).then(function(result) {
+                    URL.revokeObjectURL(imageUrl);
+                    return worker.terminate().then(function() {
+                        return result.data.text;
+                    });
+                }).catch(function(err) {
+                    URL.revokeObjectURL(imageUrl);
+                    return worker.terminate().then(function() { throw err; });
+                });
+            }).then(function(text) {
+                var parsed = parseLoanEstimate(text);
+
+                if (parsed.found) {
+                    applyParsedFields(scenarioId, parsed);
+                    var fieldNames = Object.keys(parsed.fields);
+                    statusEl.textContent = 'Extracted: ' + fieldNames.join(', ');
+                    statusEl.style.color = '#276749';
+                } else {
+                    statusEl.textContent = 'Could not auto-extract fields. Showing raw text...';
+                    statusEl.style.color = '#d73a49';
+                    showOcrFallback(text, scenarioId);
+                }
+            }).catch(function(err) {
+                statusEl.textContent = 'Error: ' + err.message;
+                statusEl.style.color = '#d73a49';
+            });
+        }
+
+        function parseLoanEstimate(text) {
+            var fields = {};
+            var found = false;
+
+            // Loan Amount
+            var loanAmountMatch = text.match(/loan\s*amount[:\s]*\$?([\d,]+(?:\.\d{2})?)/i);
+            if (loanAmountMatch) {
+                fields.loanAmount = parseFloat(loanAmountMatch[1].replace(/,/g, ''));
+                found = true;
+            }
+
+            // Interest Rate
+            var rateMatch = text.match(/interest\s*rate[:\s]*([\d.]+)\s*%/i);
+            if (rateMatch) {
+                fields.interestRate = parseFloat(rateMatch[1]);
+                found = true;
+            }
+
+            // Loan Term
+            var termMatch = text.match(/(?:loan\s*)?term[:\s]*(\d+)\s*(?:year|yr)/i);
+            if (termMatch) {
+                fields.loanTerm = parseInt(termMatch[1]);
+                found = true;
+            }
+
+            // Closing Costs
+            var closingMatch = text.match(/(?:total\s*)?closing\s*costs?[:\s]*\$?([\d,]+(?:\.\d{2})?)/i);
+            if (closingMatch) {
+                fields.closingCosts = parseFloat(closingMatch[1].replace(/,/g, ''));
+                found = true;
+            }
+
+            return { found: found, fields: fields };
+        }
+
+        function applyParsedFields(scenarioId, parsed) {
+            var scenario = state.scenarios.find(function(s) { return s.id === scenarioId; });
+            if (!scenario) return;
+
+            var f = parsed.fields;
+            if (f.interestRate !== undefined) scenario.interestRate = f.interestRate;
+            if (f.loanTerm !== undefined) {
+                var validTerms = [10, 15, 20, 30];
+                var closest = validTerms.reduce(function(prev, curr) {
+                    return Math.abs(curr - f.loanTerm) < Math.abs(prev - f.loanTerm) ? curr : prev;
+                });
+                scenario.loanTerm = closest;
+            }
+            if (f.closingCosts !== undefined) scenario.closingCosts = f.closingCosts;
+
+            // Compute down payment % from loan amount in new-loan mode
+            if (f.loanAmount !== undefined && state.mode === 'new-loan' && state.shared.homePrice > 0) {
+                var pct = Math.round((1 - f.loanAmount / state.shared.homePrice) * 100);
+                scenario.downPaymentPct = Math.max(0, Math.min(100, pct));
+            }
+
+            // Update current loan balance if applicable
+            if (f.loanAmount !== undefined && state.mode === 'refinance' && scenario.isCurrentLoan) {
+                scenario.loanBalance = f.loanAmount;
+            }
+
+            renderScenarios();
+            calculate();
+        }
+
+        function showOcrFallback(text, scenarioId) {
+            document.getElementById('ocrModalText').value = text;
+            var modal = document.getElementById('ocrModal');
+            modal.classList.add('visible');
+            modal.dataset.scenarioId = scenarioId;
+        }
+
+        function closeOcrModal() {
+            document.getElementById('ocrModal').classList.remove('visible');
+        }
+
+        // ===== EVENT HANDLING =====
+        function setupEventDelegation() {
+            var scenariosContainer = document.getElementById('scenariosContainer');
+
+            // Input changes in scenarios
+            scenariosContainer.addEventListener('input', function(e) {
+                var input = e.target;
+                if (input.dataset.scenarioId && input.dataset.field) {
+                    updateScenarioField(parseInt(input.dataset.scenarioId), input.dataset.field, input.value);
+                    debouncedCalculate();
+                }
+            });
+
+            // Select changes in scenarios
+            scenariosContainer.addEventListener('change', function(e) {
+                var el = e.target;
+                if (el.tagName === 'SELECT' && el.dataset.scenarioId && el.dataset.field) {
+                    updateScenarioField(parseInt(el.dataset.scenarioId), el.dataset.field, el.value);
+                    calculate();
+                }
+                // File upload
+                if (el.type === 'file' && el.dataset.uploadId) {
+                    var file = el.files[0];
+                    if (file) handleFileUpload(parseInt(el.dataset.uploadId), file);
+                }
+            });
+
+            // Remove scenario buttons
+            scenariosContainer.addEventListener('click', function(e) {
+                var btn = e.target.closest('[data-remove-id]');
+                if (btn) {
+                    removeScenario(parseInt(btn.dataset.removeId));
+                }
+            });
+
+            // Shared inputs
+            var sharedContainer = document.getElementById('sharedInputsContent');
+            sharedContainer.addEventListener('input', function(e) {
+                var input = e.target;
+                if (input.dataset.sharedField) {
+                    updateSharedField(input.dataset.sharedField, input.value);
+                    debouncedCalculate();
+                }
+            });
+
+            // Mode toggle
+            document.querySelectorAll('.mode-toggle button').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    switchMode(btn.dataset.mode);
+                });
+            });
+
+            // Close modal on overlay click or Escape key
+            document.getElementById('ocrModal').addEventListener('click', function(e) {
+                if (e.target === this) closeOcrModal();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeOcrModal();
+            });
+
+            // Window resize
+            var resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(calculate, 100);
+            });
+        }
+
+        // ===== INITIALIZATION =====
+        var debouncedCalculate = debounce(calculate, 250);
+
+        function init() {
+            renderSharedInputs();
+            renderScenarios();
+            setupEventDelegation();
+            calculate();
+        }
+
+        init();
+    </script>
+</body>
+</html>
