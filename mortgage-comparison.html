@@ -679,8 +679,8 @@
     <div class="add-scenario-row" id="addScenarioRow">
         <button class="add-scenario-btn" id="addScenarioBtn" onclick="addScenario()">+ Add Scenario</button>
         <label class="add-scenario-btn upload-scenario-btn" id="uploadScenarioBtn">
-            &#128247; Upload Loan Estimate (image)
-            <input type="file" id="uploadScenarioFile" accept="image/png,image/jpeg,image/webp" style="display:none;">
+            &#128196; Upload Loan Estimate
+            <input type="file" id="uploadScenarioFile" accept="image/png,image/jpeg,image/webp,application/pdf" style="display:none;">
         </label>
         <div class="upload-status" id="uploadStatus"></div>
     </div>
@@ -741,7 +741,7 @@
             <a href="https://www.consumerfinance.gov/owning-a-home/closing/" target="_blank">CFPB: Closing</a>
         </div>
         <div class="citation-item">
-            <strong>OCR Upload:</strong> Loan estimate parsing uses <a href="https://tesseract.projectnaptha.com/" target="_blank">Tesseract.js</a> for optical character recognition. Supports PNG/JPG images of CFPB-standardized loan estimate documents. Extracted fields should be verified manually.
+            <strong>OCR Upload:</strong> Loan estimate parsing uses <a href="https://tesseract.projectnaptha.com/" target="_blank">Tesseract.js</a> for optical character recognition and <a href="https://mozilla.github.io/pdf.js/" target="_blank">PDF.js</a> for PDF rendering. Supports PDF, PNG, JPG, and WebP files of CFPB-standardized loan estimate documents. PDFs are rendered at 2x resolution for OCR accuracy (first 3 pages). Extracted fields should be verified manually.
         </div>
         <p class="disclaimer"><em>This calculator provides estimates for comparison purposes only. Actual mortgage terms, rates, and costs will vary. Consult a mortgage professional for precise quotes. Does not account for points or potential rate changes on adjustable-rate mortgages.</em></p>
     </div>
@@ -1696,6 +1696,7 @@
 
         // ===== OCR =====
         var tesseractLoaded = false;
+        var pdfjsLoaded = false;
 
         function loadTesseract() {
             return new Promise(function(resolve, reject) {
@@ -1708,11 +1709,77 @@
             });
         }
 
+        function loadPdfJs() {
+            return new Promise(function(resolve, reject) {
+                if (pdfjsLoaded) { resolve(); return; }
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs';
+                script.type = 'module';
+                script.onload = function() { pdfjsLoaded = true; resolve(); };
+                script.onerror = function() { reject(new Error('Failed to load PDF.js')); };
+                document.head.appendChild(script);
+            });
+        }
+
+        // Render first 3 pages of a PDF to image blobs for OCR
+        function pdfToImages(file, statusEl) {
+            return new Promise(function(resolve, reject) {
+                var reader = new FileReader();
+                reader.onload = function() {
+                    resolve(reader.result);
+                };
+                reader.onerror = function() { reject(new Error('Failed to read PDF file')); };
+                reader.readAsArrayBuffer(file);
+            }).then(function(arrayBuffer) {
+                statusEl.textContent = 'Loading PDF renderer...';
+                // Load PDF.js via dynamic import (ESM module)
+                return import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs').then(function(pdfjsLib) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+                    statusEl.textContent = 'Rendering PDF pages...';
+                    return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                });
+            }).then(function(pdf) {
+                var pagesToRender = Math.min(pdf.numPages, 3);
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');
+                var blobs = [];
+
+                function renderPage(pageNum) {
+                    if (pageNum > pagesToRender) {
+                        return Promise.resolve(blobs);
+                    }
+                    statusEl.textContent = 'Rendering page ' + pageNum + ' of ' + pagesToRender + '...';
+                    return pdf.getPage(pageNum).then(function(page) {
+                        // Render at 2x scale for better OCR accuracy
+                        var viewport = page.getViewport({ scale: 2.0 });
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+                        return page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    }).then(function() {
+                        return new Promise(function(resolve) {
+                            canvas.toBlob(function(blob) {
+                                blobs.push(blob);
+                                resolve();
+                            }, 'image/png');
+                        });
+                    }).then(function() {
+                        return renderPage(pageNum + 1);
+                    });
+                }
+
+                return renderPage(1);
+            });
+        }
+
+        function isPdf(file) {
+            return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        }
+
         function handleUploadAndAddScenario(file) {
             if (state.scenarios.length >= MAX_SCENARIOS) return;
 
             var statusEl = document.getElementById('uploadStatus');
-            statusEl.textContent = 'Loading OCR engine...';
+            statusEl.textContent = 'Preparing...';
             statusEl.style.color = '#586069';
 
             // Create the new scenario immediately so user sees it
@@ -1724,26 +1791,49 @@
             updateAddScenarioRow();
             calculate();
 
-            loadTesseract().then(function() {
-                statusEl.textContent = 'Processing image...';
-                return Tesseract.createWorker('eng', 1, {
-                    logger: function(m) {
-                        if (m.status === 'recognizing text') {
-                            statusEl.textContent = 'Recognizing... ' + Math.round(m.progress * 100) + '%';
+            // Convert PDF to images if needed, then OCR
+            var imagePromise;
+            if (isPdf(file)) {
+                imagePromise = pdfToImages(file, statusEl);
+            } else {
+                imagePromise = Promise.resolve([file]);
+            }
+
+            imagePromise.then(function(imageBlobs) {
+                statusEl.textContent = 'Loading OCR engine...';
+                return loadTesseract().then(function() {
+                    return imageBlobs;
+                });
+            }).then(function(imageBlobs) {
+                // OCR each image and concatenate text
+                var allText = '';
+                function ocrNext(index) {
+                    if (index >= imageBlobs.length) return Promise.resolve(allText);
+                    var label = imageBlobs.length > 1
+                        ? 'Recognizing page ' + (index + 1) + ' of ' + imageBlobs.length + '... '
+                        : 'Recognizing... ';
+                    statusEl.textContent = label + '0%';
+                    return Tesseract.createWorker('eng', 1, {
+                        logger: function(m) {
+                            if (m.status === 'recognizing text') {
+                                statusEl.textContent = label + Math.round(m.progress * 100) + '%';
+                            }
                         }
-                    }
-                });
-            }).then(function(worker) {
-                var imageUrl = URL.createObjectURL(file);
-                return worker.recognize(imageUrl).then(function(result) {
-                    URL.revokeObjectURL(imageUrl);
-                    return worker.terminate().then(function() {
-                        return result.data.text;
+                    }).then(function(worker) {
+                        var imageUrl = URL.createObjectURL(imageBlobs[index]);
+                        return worker.recognize(imageUrl).then(function(result) {
+                            URL.revokeObjectURL(imageUrl);
+                            return worker.terminate().then(function() {
+                                allText += result.data.text + '\n';
+                                return ocrNext(index + 1);
+                            });
+                        }).catch(function(err) {
+                            URL.revokeObjectURL(imageUrl);
+                            return worker.terminate().then(function() { throw err; });
+                        });
                     });
-                }).catch(function(err) {
-                    URL.revokeObjectURL(imageUrl);
-                    return worker.terminate().then(function() { throw err; });
-                });
+                }
+                return ocrNext(0);
             }).then(function(text) {
                 var parsed = parseLoanEstimate(text);
 
