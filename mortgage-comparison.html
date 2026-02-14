@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mortgage Comparison Calculator - Locally Optimal Tools</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script type="module">
+        import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+        window.pdfjsLib = pdfjsLib;
+    </script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -741,7 +747,7 @@
             <a href="https://www.consumerfinance.gov/owning-a-home/closing/" target="_blank">CFPB: Closing</a>
         </div>
         <div class="citation-item">
-            <strong>OCR Upload:</strong> Loan estimate parsing uses <a href="https://tesseract.projectnaptha.com/" target="_blank">Tesseract.js</a> for optical character recognition and <a href="https://mozilla.github.io/pdf.js/" target="_blank">PDF.js</a> for PDF rendering. Supports PDF, PNG, JPG, and WebP files of CFPB-standardized loan estimate documents. PDFs are rendered at 2x resolution for OCR accuracy (first 3 pages). Extracted fields should be verified manually.
+            <strong>OCR Upload:</strong> Loan estimate parsing uses <a href="https://tesseract.projectnaptha.com/" target="_blank">Tesseract.js</a> for optical character recognition and <a href="https://mozilla.github.io/pdf.js/" target="_blank">PDF.js</a> for PDF rendering. Supports PDF, PNG, JPG, and WebP files of CFPB-standardized loan estimate documents. PDFs are rendered at 2x resolution for OCR accuracy. Extracted fields should be verified manually.
         </div>
         <p class="disclaimer"><em>This calculator provides estimates for comparison purposes only. Actual mortgage terms, rates, and costs will vary. Consult a mortgage professional for precise quotes. Does not account for points or potential rate changes on adjustable-rate mortgages.</em></p>
     </div>
@@ -1695,91 +1701,48 @@
         }
 
         // ===== OCR =====
-        var tesseractLoaded = false;
-        var pdfjsLoaded = false;
-
-        function loadTesseract() {
-            return new Promise(function(resolve, reject) {
-                if (tesseractLoaded) { resolve(); return; }
-                var script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-                script.onload = function() { tesseractLoaded = true; resolve(); };
-                script.onerror = function() { reject(new Error('Failed to load Tesseract.js')); };
-                document.head.appendChild(script);
-            });
+        function isPdf(file) {
+            return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
         }
 
-        function loadPdfJs() {
-            return new Promise(function(resolve, reject) {
-                if (pdfjsLoaded) { resolve(); return; }
-                var script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs';
-                script.type = 'module';
-                script.onload = function() { pdfjsLoaded = true; resolve(); };
-                script.onerror = function() { reject(new Error('Failed to load PDF.js')); };
-                document.head.appendChild(script);
-            });
-        }
-
-        // Render first 3 pages of a PDF to image blobs for OCR
         function pdfToImages(file, statusEl) {
             return new Promise(function(resolve, reject) {
                 var reader = new FileReader();
-                reader.onload = function() {
-                    resolve(reader.result);
-                };
+                reader.onload = function() { resolve(reader.result); };
                 reader.onerror = function() { reject(new Error('Failed to read PDF file')); };
                 reader.readAsArrayBuffer(file);
             }).then(function(arrayBuffer) {
-                statusEl.textContent = 'Loading PDF renderer...';
-                // Load PDF.js via dynamic import (ESM module)
-                return import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs').then(function(pdfjsLib) {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
-                    statusEl.textContent = 'Rendering PDF pages...';
-                    return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                });
+                statusEl.textContent = 'Rendering PDF...';
+                return window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             }).then(function(pdf) {
-                var pagesToRender = Math.min(pdf.numPages, 3);
                 var canvas = document.createElement('canvas');
                 var ctx = canvas.getContext('2d');
                 var blobs = [];
 
                 function renderPage(pageNum) {
-                    if (pageNum > pagesToRender) {
-                        return Promise.resolve(blobs);
-                    }
-                    statusEl.textContent = 'Rendering page ' + pageNum + ' of ' + pagesToRender + '...';
+                    if (pageNum > pdf.numPages) return Promise.resolve(blobs);
+                    statusEl.textContent = 'Rendering page ' + pageNum + ' of ' + pdf.numPages + '...';
                     return pdf.getPage(pageNum).then(function(page) {
-                        // Render at 2x scale for better OCR accuracy
                         var viewport = page.getViewport({ scale: 2.0 });
                         canvas.width = viewport.width;
                         canvas.height = viewport.height;
                         return page.render({ canvasContext: ctx, viewport: viewport }).promise;
                     }).then(function() {
                         return new Promise(function(resolve) {
-                            canvas.toBlob(function(blob) {
-                                blobs.push(blob);
-                                resolve();
-                            }, 'image/png');
+                            canvas.toBlob(function(blob) { blobs.push(blob); resolve(); }, 'image/png');
                         });
-                    }).then(function() {
-                        return renderPage(pageNum + 1);
-                    });
+                    }).then(function() { return renderPage(pageNum + 1); });
                 }
 
                 return renderPage(1);
             });
         }
 
-        function isPdf(file) {
-            return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-        }
-
         function handleUploadAndAddScenario(file) {
             if (state.scenarios.length >= MAX_SCENARIOS) return;
 
             var statusEl = document.getElementById('uploadStatus');
-            statusEl.textContent = 'Preparing...';
+            statusEl.textContent = 'Processing...';
             statusEl.style.color = '#586069';
 
             // Create the new scenario immediately so user sees it
@@ -1791,20 +1754,10 @@
             updateAddScenarioRow();
             calculate();
 
-            // Convert PDF to images if needed, then OCR
-            var imagePromise;
-            if (isPdf(file)) {
-                imagePromise = pdfToImages(file, statusEl);
-            } else {
-                imagePromise = Promise.resolve([file]);
-            }
+            // Convert PDF to images if needed
+            var imagePromise = isPdf(file) ? pdfToImages(file, statusEl) : Promise.resolve([file]);
 
             imagePromise.then(function(imageBlobs) {
-                statusEl.textContent = 'Loading OCR engine...';
-                return loadTesseract().then(function() {
-                    return imageBlobs;
-                });
-            }).then(function(imageBlobs) {
                 // OCR each image and concatenate text
                 var allText = '';
                 function ocrNext(index) {
@@ -1836,11 +1789,9 @@
                 return ocrNext(0);
             }).then(function(text) {
                 var parsed = parseLoanEstimate(text);
-
                 if (parsed.found) {
                     applyParsedFields(scenarioId, parsed);
-                    var fieldNames = Object.keys(parsed.fields);
-                    statusEl.textContent = 'Extracted: ' + fieldNames.join(', ');
+                    statusEl.textContent = 'Extracted: ' + Object.keys(parsed.fields).join(', ');
                     statusEl.style.color = '#276749';
                 } else {
                     statusEl.textContent = 'Could not auto-extract fields. Showing raw text...';
