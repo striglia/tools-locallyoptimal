@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mortgage Comparison Calculator - Locally Optimal Tools</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <script type="module">
-        import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs';
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
-        window.pdfjsLib = pdfjsLib;
-    </script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -1712,8 +1707,12 @@
                 reader.onerror = function() { reject(new Error('Failed to read PDF file')); };
                 reader.readAsArrayBuffer(file);
             }).then(function(arrayBuffer) {
-                statusEl.textContent = 'Rendering PDF...';
-                return window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                statusEl.textContent = 'Loading PDF renderer...';
+                return import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs').then(function(pdfjsLib) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+                    statusEl.textContent = 'Rendering PDF...';
+                    return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                });
             }).then(function(pdf) {
                 var canvas = document.createElement('canvas');
                 var ctx = canvas.getContext('2d');
@@ -1746,7 +1745,9 @@
             statusEl.style.color = '#586069';
 
             // Create the new scenario immediately so user sees it
-            var newScenario = { id: state.nextId, downPaymentPct: 20, interestRate: 6.0, loanTerm: 30, extraPayment: 0, closingCosts: 0 };
+            var newScenario = state.mode === 'refinance'
+                ? { id: state.nextId, isCurrentLoan: false, interestRate: 5.5, loanTerm: 30, extraPayment: 0, closingCosts: 15000 }
+                : { id: state.nextId, downPaymentPct: 20, interestRate: 6.0, loanTerm: 30, extraPayment: 0, closingCosts: 0 };
             state.scenarios.push(newScenario);
             state.nextId++;
             var scenarioId = newScenario.id;
@@ -1812,7 +1813,7 @@
             var uploadBtn = document.getElementById('uploadScenarioBtn');
             if (addBtn) addBtn.disabled = atMax;
             if (uploadBtn) {
-                uploadBtn.style.display = (state.mode === 'new-loan' && !atMax) ? '' : 'none';
+                uploadBtn.style.display = atMax ? 'none' : '';
             }
         }
 
