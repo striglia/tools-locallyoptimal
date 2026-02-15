@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mortgage Comparison Calculator - Locally Optimal Tools</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -152,6 +152,69 @@
         .scenario-card .input-group {
             min-width: unset;
             margin-bottom: 12px;
+        }
+
+        /* Card OCR overlay */
+        .scenario-card {
+            position: relative;
+        }
+        .card-ocr-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.88);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            z-index: 10;
+            gap: 12px;
+        }
+        .card-ocr-overlay .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e1e4e8;
+            border-top-color: #0366d6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .card-ocr-overlay .ocr-status-text {
+            font-size: 0.9em;
+            color: #586069;
+            text-align: center;
+        }
+
+        /* Per-card refinance comparison */
+        .card-comparison {
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px dashed #e1e4e8;
+            font-size: 0.85em;
+        }
+        .card-comparison .comparison-label {
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #959da5;
+            margin-bottom: 6px;
+        }
+        .card-comparison .comparison-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            color: #586069;
+        }
+        .card-comparison .comparison-value {
+            font-weight: 600;
+        }
+        .card-comparison .comparison-value.positive {
+            color: #276749;
+        }
+        .card-comparison .comparison-value.negative {
+            color: #d73a49;
         }
 
         /* Upload status */
@@ -683,7 +746,6 @@
             &#128196; Upload Loan Estimate
             <input type="file" id="uploadScenarioFile" accept="image/png,image/jpeg,image/webp,application/pdf" style="display:none;">
         </label>
-        <div class="upload-status" id="uploadStatus"></div>
     </div>
 
     <div id="results">
@@ -800,7 +862,8 @@
 
         // ===== UTILITY FUNCTIONS =====
         function parseNum(value, defaultVal) {
-            const parsed = parseFloat(value);
+            var cleaned = String(value).replace(/,/g, '');
+            const parsed = parseFloat(cleaned);
             return isNaN(parsed) ? defaultVal : parsed;
         }
 
@@ -987,6 +1050,8 @@
                         <small>If applicable (condos, townhomes)</small>
                     </div>
                 </div>`;
+
+            formatDollarInputs(container);
         }
 
         // ===== RENDERING: SCENARIOS =====
@@ -1037,7 +1102,7 @@
                 const label = SCENARIO_LABELS[index];
                 const canRemove = state.scenarios.length > MIN_SCENARIOS && !scenario.isCurrentLoan;
 
-                html += '<div class="scenario-card' + (scenario.isCurrentLoan ? ' current-loan' : '') + '" style="border-top-color: ' + color.hex + ';">';
+                html += '<div class="scenario-card' + (scenario.isCurrentLoan ? ' current-loan' : '') + '" data-card-id="' + scenario.id + '" style="border-top-color: ' + color.hex + ';">';
 
                 // Header
                 html += '<div class="scenario-header">';
@@ -1058,6 +1123,8 @@
                     html += makeSelectGroup('Loan Term', scenario.id, 'loanTerm', scenario.loanTerm || 30, termOptions);
                     html += makeInputGroup('Closing Costs ($)', scenario.id, 'closingCosts', scenario.closingCosts || 0, 'number', { min: 0, step: 1000 });
                     html += makeInputGroup('Extra Monthly Payment ($)', scenario.id, 'extraPayment', scenario.extraPayment || 0, 'number', { min: 0, step: 100 }, 'Additional principal each month');
+                    // Placeholder for per-card comparison (filled by calculate)
+                    html += '<div class="card-comparison" data-comparison-id="' + scenario.id + '"></div>';
                 } else {
                     // New loan mode
                     html += makeInputGroup('Down Payment (%)', scenario.id, 'downPaymentPct', scenario.downPaymentPct || 0, 'number', { min: 0, max: 100, step: 1 });
@@ -1086,6 +1153,23 @@
                     }
                 }
             }
+
+            // Format dollar inputs that aren't focused
+            formatDollarInputs(container);
+        }
+
+        function formatDollarInputs(container) {
+            var dollarFields = ['homePrice', 'homeInsurance', 'hoaFees', 'closingCosts', 'extraPayment', 'loanBalance'];
+            container.querySelectorAll('input[type="number"]').forEach(function(input) {
+                var field = input.dataset.field || input.dataset.sharedField || '';
+                if (dollarFields.indexOf(field) !== -1 && input !== document.activeElement) {
+                    var raw = parseFloat(input.value);
+                    if (!isNaN(raw) && raw !== 0) {
+                        input.type = 'text';
+                        input.value = Math.round(raw).toLocaleString('en-US');
+                    }
+                }
+            });
         }
 
         // ===== CALCULATE =====
@@ -1254,49 +1338,57 @@
         }
 
         function renderBreakEven(results) {
+            // Hide the standalone break-even section; comparisons now show per-card
             var section = document.getElementById('breakEvenSection');
+            section.style.display = 'none';
+
+            // Clear per-card comparisons when not in refinance mode
             if (state.mode !== 'refinance') {
-                section.style.display = 'none';
+                document.querySelectorAll('.card-comparison').forEach(function(el) { el.innerHTML = ''; });
                 return;
             }
 
             var currentLoan = results.find(function(r) { return r.isCurrentLoan; });
             var refiOptions = results.filter(function(r) { return !r.isCurrentLoan; });
 
-            if (!currentLoan || refiOptions.length === 0) {
-                section.style.display = 'none';
-                return;
-            }
-
-            section.style.display = 'block';
-            var html = '<h3>Break-Even Analysis</h3><div class="break-even-grid">';
+            if (!currentLoan || refiOptions.length === 0) return;
 
             refiOptions.forEach(function(refi) {
-                // Compare base P&I payments (without extra) for break-even
-                var monthlySavings = currentLoan.basePayment - refi.basePayment;
+                var el = document.querySelector('[data-comparison-id="' + refi.scenarioId + '"]');
+                if (!el) return;
 
-                if (monthlySavings <= 0) {
-                    html += '<div class="break-even-card" style="border-left: 3px solid ' + refi.color.hex + ';">';
-                    html += '<div class="summary-label">Scenario ' + refi.label + ' vs Current</div>';
-                    html += '<div class="break-even-months" style="color: #d73a49;">No break-even</div>';
-                    html += '<div class="break-even-detail">Higher required payment by ' + formatCurrency(Math.abs(monthlySavings)) + '/mo</div>';
-                    html += '</div>';
-                } else {
+                var monthlySavings = currentLoan.basePayment - refi.basePayment;
+                var totalSavings = currentLoan.totalCost - refi.totalCost;
+
+                var html = '<div class="comparison-label">vs Current Loan</div>';
+
+                // Monthly payment difference
+                var monthlyClass = monthlySavings >= 0 ? 'positive' : 'negative';
+                var monthlySign = monthlySavings >= 0 ? '-' : '+';
+                html += '<div class="comparison-row"><span>Monthly P&I</span>';
+                html += '<span class="comparison-value ' + monthlyClass + '">' + monthlySign + formatCurrency(Math.abs(monthlySavings)) + '/mo</span></div>';
+
+                // Total cost difference
+                var totalClass = totalSavings >= 0 ? 'positive' : 'negative';
+                var totalSign = totalSavings >= 0 ? '-' : '+';
+                html += '<div class="comparison-row"><span>Total Cost</span>';
+                html += '<span class="comparison-value ' + totalClass + '">' + totalSign + formatCurrency(Math.abs(totalSavings)) + '</span></div>';
+
+                // Break-even analysis
+                if (refi.closingCosts > 0 && monthlySavings > 0) {
                     var breakEvenMonths = Math.ceil(refi.closingCosts / monthlySavings);
                     var years = Math.floor(breakEvenMonths / 12);
                     var months = breakEvenMonths % 12;
                     var timeStr = years > 0 ? years + 'y ' + months + 'm' : breakEvenMonths + ' months';
-
-                    html += '<div class="break-even-card" style="border-left: 3px solid ' + refi.color.hex + ';">';
-                    html += '<div class="summary-label">Scenario ' + refi.label + ' vs Current</div>';
-                    html += '<div class="break-even-months" style="color: ' + refi.color.hex + ';">' + timeStr + '</div>';
-                    html += '<div class="break-even-detail">Save ' + formatCurrency(monthlySavings) + '/mo, recoup ' + formatCurrency(refi.closingCosts) + ' closing costs</div>';
-                    html += '</div>';
+                    html += '<div class="comparison-row"><span>Break-even</span>';
+                    html += '<span class="comparison-value">' + timeStr + '</span></div>';
+                } else if (monthlySavings <= 0) {
+                    html += '<div class="comparison-row"><span>Break-even</span>';
+                    html += '<span class="comparison-value negative">N/A (higher payment)</span></div>';
                 }
-            });
 
-            html += '</div>';
-            section.innerHTML = html;
+                el.innerHTML = html;
+            });
         }
 
         // ===== CHARTS =====
@@ -1700,6 +1792,10 @@
             return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
         }
 
+        function setStatusText(el, text) {
+            if (el) el.textContent = text;
+        }
+
         function pdfToImages(file, statusEl) {
             return new Promise(function(resolve, reject) {
                 var reader = new FileReader();
@@ -1707,10 +1803,10 @@
                 reader.onerror = function() { reject(new Error('Failed to read PDF file')); };
                 reader.readAsArrayBuffer(file);
             }).then(function(arrayBuffer) {
-                statusEl.textContent = 'Loading PDF renderer...';
+                setStatusText(statusEl, 'Loading PDF renderer...');
                 return import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs').then(function(pdfjsLib) {
                     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
-                    statusEl.textContent = 'Rendering PDF...';
+                    setStatusText(statusEl, 'Rendering PDF...');
                     return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                 });
             }).then(function(pdf) {
@@ -1720,7 +1816,7 @@
 
                 function renderPage(pageNum) {
                     if (pageNum > pdf.numPages) return Promise.resolve(blobs);
-                    statusEl.textContent = 'Rendering page ' + pageNum + ' of ' + pdf.numPages + '...';
+                    setStatusText(statusEl, 'Rendering page ' + pageNum + ' of ' + pdf.numPages + '...');
                     return pdf.getPage(pageNum).then(function(page) {
                         var viewport = page.getViewport({ scale: 2.0 });
                         canvas.width = viewport.width;
@@ -1737,12 +1833,28 @@
             });
         }
 
+        function showCardOverlay(scenarioId, text) {
+            var card = document.querySelector('[data-card-id="' + scenarioId + '"]');
+            if (!card) return null;
+            // Remove existing overlay if any
+            var existing = card.querySelector('.card-ocr-overlay');
+            if (existing) existing.remove();
+            var overlay = document.createElement('div');
+            overlay.className = 'card-ocr-overlay';
+            overlay.innerHTML = '<div class="spinner"></div><div class="ocr-status-text">' + text + '</div>';
+            card.appendChild(overlay);
+            return overlay.querySelector('.ocr-status-text');
+        }
+
+        function removeCardOverlay(scenarioId) {
+            var card = document.querySelector('[data-card-id="' + scenarioId + '"]');
+            if (!card) return;
+            var overlay = card.querySelector('.card-ocr-overlay');
+            if (overlay) overlay.remove();
+        }
+
         function handleUploadAndAddScenario(file) {
             if (state.scenarios.length >= MAX_SCENARIOS) return;
-
-            var statusEl = document.getElementById('uploadStatus');
-            statusEl.textContent = 'Processing...';
-            statusEl.style.color = '#586069';
 
             // Create the new scenario immediately so user sees it
             var newScenario = state.mode === 'refinance'
@@ -1755,8 +1867,11 @@
             updateAddScenarioRow();
             calculate();
 
+            // Show overlay spinner on the new card
+            var statusTextEl = showCardOverlay(scenarioId, 'Processing...');
+
             // Convert PDF to images if needed
-            var imagePromise = isPdf(file) ? pdfToImages(file, statusEl) : Promise.resolve([file]);
+            var imagePromise = isPdf(file) ? pdfToImages(file, statusTextEl) : Promise.resolve([file]);
 
             imagePromise.then(function(imageBlobs) {
                 // OCR each image and concatenate text
@@ -1766,11 +1881,13 @@
                     var label = imageBlobs.length > 1
                         ? 'Recognizing page ' + (index + 1) + ' of ' + imageBlobs.length + '... '
                         : 'Recognizing... ';
-                    statusEl.textContent = label + '0%';
+                    setStatusText(statusTextEl, label + '0%');
                     return Tesseract.createWorker('eng', 1, {
+                        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+                        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.0',
                         logger: function(m) {
                             if (m.status === 'recognizing text') {
-                                statusEl.textContent = label + Math.round(m.progress * 100) + '%';
+                                setStatusText(statusTextEl, label + Math.round(m.progress * 100) + '%');
                             }
                         }
                     }).then(function(worker) {
@@ -1789,21 +1906,18 @@
                 }
                 return ocrNext(0);
             }).then(function(text) {
+                removeCardOverlay(scenarioId);
                 var parsed = parseLoanEstimate(text);
                 if (parsed.found) {
                     applyParsedFields(scenarioId, parsed);
-                    statusEl.textContent = 'Extracted: ' + Object.keys(parsed.fields).join(', ');
-                    statusEl.style.color = '#276749';
                 } else {
-                    statusEl.textContent = 'Could not auto-extract fields. Showing raw text...';
-                    statusEl.style.color = '#d73a49';
                     showOcrFallback(text, scenarioId);
                 }
-                setTimeout(function() { statusEl.textContent = ''; }, 5000);
             }).catch(function(err) {
-                statusEl.textContent = 'Error: ' + err.message;
-                statusEl.style.color = '#d73a49';
-                setTimeout(function() { statusEl.textContent = ''; }, 5000);
+                removeCardOverlay(scenarioId);
+                // Show error briefly on the card
+                showCardOverlay(scenarioId, 'Error: ' + err.message);
+                setTimeout(function() { removeCardOverlay(scenarioId); }, 4000);
             });
         }
 
@@ -1939,6 +2053,29 @@
                 if (input.dataset.sharedField) {
                     updateSharedField(input.dataset.sharedField, input.value);
                     debouncedCalculate();
+                }
+            });
+
+            // Dollar formatting: show commas on blur, raw number on focus
+            var dollarFields = ['homePrice', 'homeInsurance', 'hoaFees', 'closingCosts', 'extraPayment', 'loanBalance'];
+            function isDollarInput(input) {
+                var field = input.dataset.field || input.dataset.sharedField || '';
+                return dollarFields.indexOf(field) !== -1;
+            }
+            document.addEventListener('focusin', function(e) {
+                if (e.target.tagName === 'INPUT' && isDollarInput(e.target)) {
+                    var raw = e.target.value.replace(/,/g, '');
+                    e.target.type = 'number';
+                    e.target.value = raw;
+                }
+            });
+            document.addEventListener('focusout', function(e) {
+                if (e.target.tagName === 'INPUT' && isDollarInput(e.target)) {
+                    var raw = parseFloat(e.target.value);
+                    e.target.type = 'text';
+                    if (!isNaN(raw) && raw !== 0) {
+                        e.target.value = Math.round(raw).toLocaleString('en-US');
+                    }
                 }
             });
 
