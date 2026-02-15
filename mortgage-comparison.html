@@ -1439,16 +1439,34 @@
             var visibleYears = endYear - startYear;
             if (visibleYears <= 0) return;
 
-            // Compute max value in visible range
+            // Compute min/max values in visible range
             var maxValue = 0;
+            var minValue = Infinity;
             seriesArray.forEach(function(s) {
                 for (var i = startYear; i <= endYear && i < s.points.length; i++) {
                     if (s.points[i] > maxValue) maxValue = s.points[i];
+                    if (s.points[i] < minValue) minValue = s.points[i];
                 }
             });
-            if (maxValue === 0) return;
+            if (maxValue === 0 && minValue === Infinity) return;
+            if (minValue === Infinity) minValue = 0;
 
-            var yScale = chartHeight / maxValue;
+            // When not zoomed, Y starts at 0; when zoomed, fit to data with 5% padding
+            var isZoomed = zoomStart != null || zoomEnd != null;
+            var yMin, yMax;
+            if (isZoomed && minValue > 0) {
+                var range = maxValue - minValue;
+                var pad = range > 0 ? range * 0.05 : maxValue * 0.05;
+                yMin = Math.max(0, minValue - pad);
+                yMax = maxValue + pad;
+            } else {
+                yMin = 0;
+                yMax = maxValue;
+            }
+            var yRange = yMax - yMin;
+            if (yRange === 0) return;
+
+            var yScale = chartHeight / yRange;
             var xScale = chartWidth / visibleYears;
 
             // Grid lines
@@ -1462,7 +1480,7 @@
                 ctx.lineTo(layout.width - padding.right, y);
                 ctx.stroke();
 
-                var value = maxValue * (1 - i / numGridLines);
+                var value = yMax - (yRange * i / numGridLines);
                 ctx.fillStyle = '#586069';
                 ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'right';
@@ -1477,7 +1495,7 @@
                 var started = false;
                 for (var i = startYear; i <= endYear && i < series.points.length; i++) {
                     var x = padding.left + (i - startYear) * xScale;
-                    var yVal = padding.top + chartHeight - series.points[i] * yScale;
+                    var yVal = padding.top + chartHeight - (series.points[i] - yMin) * yScale;
                     if (!started) { ctx.moveTo(x, yVal); started = true; }
                     else ctx.lineTo(x, yVal);
                 }
@@ -1625,17 +1643,31 @@
                         ctx.setLineDash([]);
 
                         // Draw dots on series at this year
-                        var dotMaxValue = 0;
+                        var dotMax = 0, dotMin = Infinity;
                         cs.series.forEach(function(s) {
                             for (var j = startYear; j <= endYear && j < s.points.length; j++) {
-                                if (s.points[j] > dotMaxValue) dotMaxValue = s.points[j];
+                                if (s.points[j] > dotMax) dotMax = s.points[j];
+                                if (s.points[j] < dotMin) dotMin = s.points[j];
                             }
                         });
-                        if (dotMaxValue > 0) {
-                            var dotYScale = layout.chartHeight / dotMaxValue;
+                        if (dotMin === Infinity) dotMin = 0;
+                        var isZoomed = cs.zoomStart != null || cs.zoomEnd != null;
+                        var dotYMin, dotYMax;
+                        if (isZoomed && dotMin > 0) {
+                            var dotRange = dotMax - dotMin;
+                            var dotPad = dotRange > 0 ? dotRange * 0.05 : dotMax * 0.05;
+                            dotYMin = Math.max(0, dotMin - dotPad);
+                            dotYMax = dotMax + dotPad;
+                        } else {
+                            dotYMin = 0;
+                            dotYMax = dotMax;
+                        }
+                        var dotYRange = dotYMax - dotYMin;
+                        if (dotYRange > 0) {
+                            var dotYScale = layout.chartHeight / dotYRange;
                             cs.series.forEach(function(s) {
                                 if (year >= 0 && year < s.points.length) {
-                                    var dotY = layout.padding.top + layout.chartHeight - s.points[year] * dotYScale;
+                                    var dotY = layout.padding.top + layout.chartHeight - (s.points[year] - dotYMin) * dotYScale;
                                     ctx.beginPath();
                                     ctx.arc(snapX, dotY, 4, 0, Math.PI * 2);
                                     ctx.fillStyle = s.color;
