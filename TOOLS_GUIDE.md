@@ -6,7 +6,7 @@ A simple guide for creating new tools for this repository.
 
 ## Philosophy
 
-Each tool is a **standalone HTML file** with embedded CSS and JavaScript. No build process, no dependencies—just open it in a browser and it works.
+Each tool is a **standalone HTML file** with embedded CSS and JavaScript. No build process required—just open it in a browser and it works. External JavaScript libraries via CDN (e.g., Chart.js, D3) are welcome when they simplify implementation.
 
 ## File Structure
 
@@ -248,6 +248,6 @@ Look at existing tools for reference:
 - [ ] Error handling with user feedback
 - [ ] Clear button to reset state
 - [ ] Footer link back to index
-- [ ] Works without internet (no external dependencies if possible)
+- [ ] Works without internet (CDN libraries are fine, but no server-side dependencies)
 - [ ] Added to `index.html`
 - [ ] Tested on mobile
