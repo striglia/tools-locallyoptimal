@@ -4,17 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slack Text Cleaner - Locally Optimal Tools</title>
+    <script>(function(){var t=localStorage.getItem('lo-theme');if(t)document.documentElement.setAttribute('data-theme',t)})()</script>
     <style>
+        :root {
+            --bg: #ffffff;
+            --bg2: #f6f8fa;
+            --bg3: #e1e4e8;
+            --tx: #333;
+            --tx2: #586069;
+            --tx3: #6a737d;
+            --bd: #d1d5da;
+            --bd2: #eee;
+            --accent: #0366d6;
+            --accent-hover: #0256c7;
+            --success: #28a745;
+        }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --success: #3fb950;
+        }}
+        :root[data-theme="dark"] {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --success: #3fb950;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--bd);
+            background: var(--bg2);
+            color: var(--tx2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+            z-index: 100;
+            padding: 0;
+        }
+        .theme-toggle:hover {
+            background: var(--bg3);
+            color: var(--tx);
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             line-height: 1.6;
-            color: #333;
+            color: var(--tx);
+            background: var(--bg);
         }
         h1 {
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--bd2);
             padding-bottom: 10px;
         }
         .section {
@@ -23,7 +87,7 @@
         .section h2 {
             font-size: 1.1em;
             margin-bottom: 10px;
-            color: #555;
+            color: var(--tx2);
         }
         textarea {
             width: 100%;
@@ -31,18 +95,20 @@
             font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
             font-size: 13px;
             padding: 12px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
             border-radius: 4px;
             box-sizing: border-box;
             resize: vertical;
+            background: var(--bg);
+            color: var(--tx);
         }
         textarea:focus {
             outline: none;
-            border-color: #0366d6;
+            border-color: var(--accent);
         }
         .output-area {
-            background: #f6f8fa;
-            border: 1px solid #ddd;
+            background: var(--bg2);
+            border: 1px solid var(--bd);
             border-radius: 4px;
             padding: 12px;
             min-height: 200px;
@@ -54,7 +120,7 @@
             max-height: 400px;
         }
         .output-area.empty {
-            color: #999;
+            color: var(--tx3);
             font-style: italic;
         }
         .options {
@@ -75,15 +141,17 @@
         }
         .options select {
             padding: 4px 8px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
             border-radius: 4px;
             font-size: 13px;
             cursor: pointer;
             margin-left: 4px;
+            background: var(--bg);
+            color: var(--tx);
         }
         .options select:focus {
             outline: none;
-            border-color: #0366d6;
+            border-color: var(--accent);
         }
         .controls {
             display: flex;
@@ -94,7 +162,7 @@
             margin-top: 15px;
         }
         button {
-            background: #0366d6;
+            background: var(--accent);
             color: white;
             border: none;
             padding: 8px 16px;
@@ -103,30 +171,30 @@
             font-size: 14px;
         }
         button:hover {
-            background: #0256c7;
+            background: var(--accent-hover);
         }
         button.secondary {
-            background: #6c757d;
+            background: var(--tx3);
         }
         button.secondary:hover {
-            background: #5a6268;
+            background: var(--tx2);
         }
         button.success {
-            background: #28a745;
+            background: var(--success);
         }
         .stats {
             font-size: 13px;
-            color: #666;
+            color: var(--tx3);
         }
         footer {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--bd2);
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
         }
         footer a {
-            color: #0366d6;
+            color: var(--accent);
         }
         @media (max-width: 600px) {
             body {
@@ -150,6 +218,7 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"></button>
     <h1>Slack Text Cleaner</h1>
     <p>Clean up copy/pasted Slack conversations into readable Markdown.</p>
 
@@ -827,6 +896,25 @@
             timestampFormatLabel.style.display = 'none';
             includeSystemMessages.checked = false;
         }
+    </script>
+    <script>
+    (function(){
+        function isDark(){
+            var t=document.documentElement.getAttribute('data-theme');
+            if(t==='dark') return true;
+            if(t==='light') return false;
+            return matchMedia('(prefers-color-scheme:dark)').matches;
+        }
+        var btn=document.getElementById('themeToggle');
+        function updateIcon(){btn.textContent=isDark()?'\u2600':'\u263E';}
+        updateIcon();
+        btn.addEventListener('click',function(){
+            var next=isDark()?'light':'dark';
+            document.documentElement.setAttribute('data-theme',next);
+            localStorage.setItem('lo-theme',next);
+            updateIcon();
+        });
+    })();
     </script>
 </body>
 </html>
