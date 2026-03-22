@@ -19,7 +19,7 @@
     --fn:'DM Sans',system-ui,sans-serif;
     --mo:'JetBrains Mono',monospace;
   }
-  @media(prefers-color-scheme:dark){:root{
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
     --bg:#1A1A18;--bg2:#252523;--bg3:#333331;
     --tx:#E8E7E3;--tx2:#9C9B96;--tx3:#6B6A65;
     --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.05);
@@ -29,6 +29,16 @@
     --danger:#F09595;--danger-bg:#3A1414;
     --warn:#EFB84C;--warn-bg:#3A2E10;
   }}
+  :root[data-theme="dark"]{
+    --bg:#1A1A18;--bg2:#252523;--bg3:#333331;
+    --tx:#E8E7E3;--tx2:#9C9B96;--tx3:#6B6A65;
+    --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.05);
+    --roth:#3DC99A;--roth-bg:#0A3D2E;
+    --k4:#6AACEF;--k4-bg:#0C2E4D;
+    --tax:#9C9B96;--tax-bg:#2C2C2A;
+    --danger:#F09595;--danger-bg:#3A1414;
+    --warn:#EFB84C;--warn-bg:#3A2E10;
+  }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--fn);background:var(--bg);color:var(--tx);line-height:1.65;-webkit-font-smoothing:antialiased;}
   .c{max-width:760px;margin:0 auto;padding:48px 24px 80px;}
@@ -98,9 +108,12 @@
   .res a:hover{border-bottom-color:var(--roth);}
   .res .rdesc{font-size:12px;color:var(--tx3);margin-top:2px;}
   .foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--bd2);font-size:12px;color:var(--tx3);line-height:1.6;}
+  .theme-toggle{position:fixed;top:16px;right:16px;width:36px;height:36px;border-radius:50%;border:1px solid var(--bd);background:var(--bg2);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s;z-index:100;padding:0;}
+  .theme-toggle:hover{background:var(--bg3);color:var(--tx);}
 </style>
 </head>
 <body>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">☀</button>
 <div class="c">
 <h1>The backdoor Roth IRA</h1>
 <p class="sub">A visual walkthrough for high-income earners who can't contribute directly to a Roth IRA — and what it means for long-term wealth.</p>
@@ -232,12 +245,42 @@ function show(i){
 show(0);
 // ─── PROJECTION ─────────────────────────────────────────
 var C=7000,DY=.02,DT=.243,LT=.243;
-var dk=matchMedia('(prefers-color-scheme:dark)').matches;
-var gc=dk?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
-var tc=dk?'#9c9a92':'#9c9a92';
-var rc=dk?'#3DC99A':'#0E7C5F';
-var kc=dk?'#6AACEF':'#2B6DB5';
-var xc=dk?'#9C9B96':'#888780';
+function isDark(){
+  var t=document.documentElement.getAttribute('data-theme');
+  if(t==='dark') return true;
+  if(t==='light') return false;
+  return matchMedia('(prefers-color-scheme:dark)').matches;
+}
+function themeColors(){
+  var dk=isDark();
+  return {
+    gc:dk?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)',
+    tc:dk?'#9c9a92':'#9c9a92',
+    rc:dk?'#3DC99A':'#0E7C5F',
+    kc:dk?'#6AACEF':'#2B6DB5',
+    xc:dk?'#9C9B96':'#888780',
+    dk:dk
+  };
+}
+var dk=isDark();
+var gc,tc,rc,kc,xc;
+function applyThemeColors(){
+  var c=themeColors();
+  dk=c.dk;gc=c.gc;tc=c.tc;rc=c.rc;kc=c.kc;xc=c.xc;
+}
+applyThemeColors();
+// Theme toggle
+var toggleBtn=document.getElementById('themeToggle');
+function updateToggleIcon(){toggleBtn.textContent=isDark()?'☀':'☾';}
+updateToggleIcon();
+toggleBtn.addEventListener('click',function(){
+  var cur=isDark();
+  document.documentElement.setAttribute('data-theme',cur?'light':'dark');
+  applyThemeColors();
+  updateToggleIcon();
+  updateChartTheme();
+  up();
+});
 var chart=new Chart(document.getElementById('ch'),{
   type:'line',
   data:{labels:[],datasets:[
@@ -262,6 +305,26 @@ var chart=new Chart(document.getElementById('ch'),{
     }
   }
 });
+function updateChartTheme(){
+  var c=themeColors();
+  chart.data.datasets[0].borderColor=c.rc;
+  chart.data.datasets[0].backgroundColor=c.dk?'rgba(61,201,154,.08)':'rgba(14,124,95,.06)';
+  chart.data.datasets[0].pointHoverBackgroundColor=c.rc;
+  chart.data.datasets[1].borderColor=c.kc;
+  chart.data.datasets[1].backgroundColor=c.dk?'rgba(106,172,239,.05)':'rgba(43,109,181,.04)';
+  chart.data.datasets[1].pointHoverBackgroundColor=c.kc;
+  chart.data.datasets[2].borderColor=c.xc;
+  chart.data.datasets[2].backgroundColor=c.dk?'rgba(156,155,150,.05)':'rgba(136,135,128,.04)';
+  chart.data.datasets[2].pointHoverBackgroundColor=c.xc;
+  chart.options.scales.x.ticks.color=c.tc;
+  chart.options.scales.y.ticks.color=c.tc;
+  chart.options.scales.y.grid.color=c.gc;
+  chart.options.plugins.tooltip.backgroundColor=c.dk?'#333':'#fff';
+  chart.options.plugins.tooltip.titleColor=c.dk?'#e8e7e3':'#1a1a18';
+  chart.options.plugins.tooltip.bodyColor=c.dk?'#9c9b96':'#6b6a65';
+  chart.options.plugins.tooltip.borderColor=c.dk?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)';
+  chart.update('none');
+}
 function fm(v){return v>=1e6?'$'+(v/1e6).toFixed(2)+'M':'$'+Math.round(v).toLocaleString()}
 function up(){
   var r=+document.getElementById('sr').value/100;

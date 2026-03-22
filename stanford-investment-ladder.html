@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investment Ladder — Stanford Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F7F6F3;--bg2:#ECEAE5;--bg3:#DEDAD4;
+    --tx:#1A1A18;--tx2:#52514C;--tx3:#7A7974;
+    --bd:rgba(0,0,0,0.15);--bd2:rgba(0,0,0,0.08);
+    --roth:#0A6B50;--roth-bg:#D4F0E3;
+    --k4:#1E5FA3;--k4-bg:#D8EAF8;
+    --tax:#5C5B56;--tax-bg:#E8E6DF;
+    --danger:#B02828;--danger-bg:#F9DEDE;
+    --warn:#856010;--warn-bg:#F8EDD4;
+    --accent:#6A4FAD;--accent-bg:#E6E0F3;
+    --fn:'DM Sans',system-ui,sans-serif;
+    --mo:'JetBrains Mono',monospace;
+  }
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#1A1A18;--bg2:#252523;--bg3:#333331;
+    --tx:#E8E7E3;--tx2:#9C9B96;--tx3:#6B6A65;
+    --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.05);
+    --roth:#3DC99A;--roth-bg:#0A3D2E;
+    --k4:#6AACEF;--k4-bg:#0C2E4D;
+    --tax:#9C9B96;--tax-bg:#2C2C2A;
+    --danger:#F09595;--danger-bg:#3A1414;
+    --warn:#EFB84C;--warn-bg:#3A2E10;
+    --accent:#B89AEF;--accent-bg:#2A1F3D;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#1A1A18;--bg2:#252523;--bg3:#333331;
+    --tx:#E8E7E3;--tx2:#9C9B96;--tx3:#6B6A65;
+    --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.05);
+    --roth:#3DC99A;--roth-bg:#0A3D2E;
+    --k4:#6AACEF;--k4-bg:#0C2E4D;
+    --tax:#9C9B96;--tax-bg:#2C2C2A;
+    --danger:#F09595;--danger-bg:#3A1414;
+    --warn:#EFB84C;--warn-bg:#3A2E10;
+    --accent:#B89AEF;--accent-bg:#2A1F3D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--fn);background:var(--bg);color:var(--tx);line-height:1.65;-webkit-font-smoothing:antialiased;}
+  .c{max-width:760px;margin:0 auto;padding:48px 24px 80px;}
+  h1{font-size:30px;font-weight:600;letter-spacing:-0.5px;margin-bottom:6px;}
+  .sub{font-size:15px;color:var(--tx2);margin-bottom:36px;max-width:620px;}
+  .sec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--tx3);margin-bottom:14px;}
+  h2{font-size:22px;font-weight:600;letter-spacing:-0.3px;margin-bottom:20px;}
+  .hr{height:1px;background:var(--bd2);margin:44px 0;}
+  .mono{font-family:var(--mo);font-size:14px;font-weight:500;}
+  .badge{display:inline-block;padding:2px 10px;border-radius:100px;font-size:11px;font-weight:600;}
+  .bg{background:var(--roth-bg);color:var(--roth);}
+  .bb{background:var(--k4-bg);color:var(--k4);}
+  .br{background:var(--danger-bg);color:var(--danger);}
+  .bw{background:var(--warn-bg);color:var(--warn);}
+  .ba{background:var(--accent-bg);color:var(--accent);}
+  /* Assumptions panel */
+  .assumptions{background:var(--bg2);border:1px solid var(--bd2);border-radius:14px;padding:22px 24px;margin-bottom:36px;}
+  .assumptions-title{font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+  .assumptions-title::after{content:'▾';font-size:11px;transition:transform .2s;}
+  .assumptions.collapsed .assumptions-title::after{transform:rotate(-90deg);}
+  .assumptions.collapsed .assumptions-body{display:none;}
+  .assumptions-body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px 18px;}
+  @media(max-width:600px){.assumptions-body{grid-template-columns:1fr;}}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:4px;}
+  .tip{width:14px;height:14px;border-radius:50%;background:var(--bg3);color:var(--tx3);font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;cursor:help;position:relative;flex-shrink:0;}
+  .tip:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);font-size:11px;font-weight:400;padding:8px 12px;border-radius:8px;white-space:normal;width:220px;line-height:1.5;z-index:10;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.15);}
+  .tip:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--tx);z-index:10;}
+  .field input,.field select{font-family:var(--mo);font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);outline:none;transition:border-color .2s;}
+  .field input:focus,.field select:focus{border-color:var(--k4);}
+  .field select{cursor:pointer;}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+  /* Breadcrumb stepper */
+  .pills{display:flex;align-items:center;gap:0;margin-bottom:22px;flex-wrap:wrap;}
+  .pill{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;user-select:none;border:none;background:transparent;color:var(--tx3);display:flex;align-items:center;gap:5px;}
+  .pill:hover{color:var(--tx);background:var(--bg2);}
+  .pill.on{color:var(--tx);font-weight:600;background:var(--bg2);}
+  .pill .step-num{font-family:var(--mo);font-size:9px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg3);color:var(--tx3);font-weight:600;}
+  .pill.on .step-num{background:var(--tx);color:var(--bg);}
+  .pill.done{opacity:.6;}
+  .pill.done .step-num{background:var(--roth-bg);color:var(--roth);}
+  .pill-sep{color:var(--tx2);font-size:13px;padding:0 1px;user-select:none;font-weight:300;}
+  /* Next rung button */
+  .next-rung{display:inline-flex;align-items:center;gap:10px;margin-top:28px;padding:8px 20px 8px 16px;border-radius:100px;border:1px solid var(--bd);background:var(--bg2);cursor:pointer;transition:all .2s;text-decoration:none;color:var(--tx);font-size:13px;font-weight:500;}
+  .next-rung:hover{background:var(--bg3);border-color:var(--k4);}
+  .next-rung-label{font-size:11px;color:var(--tx3);font-weight:400;}
+  .next-rung-title{font-weight:600;}
+  .next-rung-arrow{font-size:14px;color:var(--tx3);transition:transform .2s;}
+  .next-rung:hover .next-rung-arrow{transform:translateX(3px);color:var(--k4);}
+  /* Step content */
+  .step-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+  .step-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .step-label{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;font-weight:500;}
+  .step-title{font-size:20px;font-weight:600;letter-spacing:-0.3px;}
+  /* Boxes */
+  .flow{display:flex;align-items:stretch;margin:14px 0;gap:0;flex-wrap:wrap;}
+  @media(max-width:600px){.flow{flex-direction:column;}.arr{transform:rotate(90deg);width:auto!important;min-width:auto!important;padding:4px 0;}}
+  .box{flex:1;min-width:120px;padding:16px 18px;border-radius:12px;border:1px solid var(--bd);background:var(--bg);}
+  .box.hl{border-color:var(--roth);background:var(--roth-bg);}
+  .box.info{border-color:var(--k4);background:var(--k4-bg);}
+  .box.wr{border-color:var(--warn);background:var(--warn-bg);}
+  .box.ac{border-color:var(--accent);background:var(--accent-bg);}
+  .box.w2{flex:2;}
+  .arr{display:flex;align-items:center;justify-content:center;width:42px;min-width:42px;color:var(--tx3);font-size:18px;}
+  .tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);margin-bottom:5px;}
+  .ttl{font-size:15px;font-weight:500;margin-bottom:3px;}
+  .det{font-size:13px;color:var(--tx2);line-height:1.55;}
+  .co{margin:18px 0 0;padding:15px 18px;border-radius:10px;background:var(--bg2);font-size:14px;color:var(--tx2);line-height:1.7;border-left:3px solid var(--bg3);}
+  .co b{color:var(--tx);font-weight:500;}
+  .co.dg{border-left-color:var(--danger);background:var(--danger-bg);}
+  .co.gr{border-left-color:var(--roth);background:var(--roth-bg);}
+  .co.bl{border-left-color:var(--k4);background:var(--k4-bg);}
+  /* Metrics */
+  .mets{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0;}
+  @media(max-width:500px){.mets{grid-template-columns:1fr;}}
+  .met{padding:14px 16px;border-radius:12px;background:var(--bg2);border:1px solid var(--bd2);}
+  .met-l{font-size:11px;color:var(--tx3);margin-bottom:4px;}
+  .met-v{font-family:var(--mo);font-size:22px;font-weight:500;letter-spacing:-.5px;}
+  .met-s{font-size:11px;color:var(--tx3);margin-top:3px;}
+  /* Summary bar */
+  .summary-bar{display:flex;border-radius:10px;overflow:hidden;margin:18px 0;font-size:11px;font-weight:600;}
+  .summary-bar div{padding:10px 8px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  /* Citation */
+  .cite{font-size:11px;color:var(--tx3);margin-top:14px;line-height:1.6;}
+  .cite a{color:var(--k4);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s;}
+  .cite a:hover{border-bottom-color:var(--k4);}
+  /* Resources */
+  .res{margin-top:48px;padding-top:28px;border-top:1px solid var(--bd2);}
+  .res h3{font-size:16px;font-weight:600;margin-bottom:14px;}
+  .res ul{list-style:none;padding:0;}
+  .res li{margin-bottom:10px;}
+  .res a{color:var(--roth);text-decoration:none;font-size:14px;font-weight:500;border-bottom:1px solid transparent;transition:border-color .2s;}
+  .res a:hover{border-bottom-color:var(--roth);}
+  .res .rdesc{font-size:12px;color:var(--tx3);margin-top:2px;}
+  .foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--bd2);font-size:12px;color:var(--tx3);line-height:1.6;}
+  /* Theme toggle */
+  .theme-toggle{position:fixed;top:16px;right:16px;width:36px;height:36px;border-radius:50%;border:1px solid var(--bd);background:var(--bg2);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s;z-index:100;padding:0;}
+  .theme-toggle:hover{background:var(--bg3);color:var(--tx);}
+  /* Checklist */
+  .checklist{margin:14px 0;padding:0;list-style:none;}
+  .checklist li{font-size:14px;padding:6px 0;color:var(--tx2);display:flex;align-items:flex-start;gap:8px;line-height:1.5;}
+  .checklist li::before{content:'☐';color:var(--tx3);flex-shrink:0;font-size:13px;margin-top:1px;}
+  .checklist li.done::before{content:'☑';color:var(--roth);}
+  .checklist li.done{color:var(--tx3);text-decoration:line-through;}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">☀</button>
+<div class="c">
+<h1>The investment ladder</h1>
+<p class="sub">A step-by-step priority guide for where your next dollar should go — tuned for Stanford employees on the SCRP.</p>
+
+<!-- ═══════════ ASSUMPTIONS ═══════════ -->
+<div class="assumptions" id="assumptions">
+  <div class="assumptions-title" onclick="toggleAssumptions()">Your situation</div>
+  <div class="assumptions-body">
+    <div class="field">
+      <label>Annual salary</label>
+      <input type="text" id="inSalary" value="250,000" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>Years at Stanford</label>
+      <select id="inYears">
+        <option value="1" selected>1 (first year)</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5+</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Filing status</label>
+      <select id="inFiling">
+        <option value="single">Single</option>
+        <option value="married" selected>Married filing jointly</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Monthly fixed costs <span class="tip" data-tip="Rent/mortgage, utilities, insurance, groceries, minimum debt payments — the non-negotiable spend you'd need to cover if income stopped. Not discretionary spending.">?</span></label>
+      <input type="text" id="inExpenses" value="8,000" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>Current emergency fund <span class="tip" data-tip="What you have saved today. We'll calculate your target automatically based on your fixed costs and months below.">?</span></label>
+      <input type="text" id="inEmergency" value="15,000" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>Target months of fixed costs <span class="tip" data-tip="How many months of fixed costs your emergency fund should cover. 3 is the minimum; 6 is standard. Dual-income households can lean toward 3–4.">?</span></label>
+      <select id="inMonths">
+        <option value="3">3 months</option>
+        <option value="4">4 months</option>
+        <option value="5">5 months</option>
+        <option value="6" selected>6 months</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>High-interest debt</label>
+      <input type="text" id="inDebt" value="0" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>Health plan</label>
+      <select id="inHealth">
+        <option value="hdhp" selected>Choice HDHP (HSA-eligible)</option>
+        <option value="copay">Copay plan (no HSA)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>HSA coverage level</label>
+      <select id="inCoverage">
+        <option value="self" selected>Employee only</option>
+        <option value="family">Family</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Have kids / planning?</label>
+      <select id="inKids">
+        <option value="no" selected>No</option>
+        <option value="yes">Yes</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ LADDER ═══════════ -->
+<div class="sec">Your priority order</div>
+<div class="pills" id="pills"></div>
+<div id="panel"></div>
+
+<!-- ═══════════ RESOURCES ═══════════ -->
+<div class="res">
+  <h3>Sources &amp; further reading</h3>
+  <ul>
+    <li>
+      <a href="https://cardinalatwork.stanford.edu/benefits-rewards/saving-retirement/stanford-contributory-retirement-plan-scrp/basic-and-matching" target="_blank" rel="noopener">Stanford SCRP: Basic &amp; matching contributions ↗</a>
+      <div class="rdesc">Official match formula, basic contribution schedule, and true-up details.</div>
+    </li>
+    <li>
+      <a href="https://cardinalatwork.stanford.edu/benefits-rewards/saving-retirement/stanford-contributory-retirement-plan-scrp" target="_blank" rel="noopener">Stanford SCRP: Plan overview ↗</a>
+      <div class="rdesc">TDA, Roth 403(b), and CRA account types. Eligibility and enrollment.</div>
+    </li>
+    <li>
+      <a href="https://cardinalatwork.stanford.edu/benefits-rewards/saving-retirement/stanford-contributory-retirement-plan-scrp/basic-and-matching-0" target="_blank" rel="noopener">2026 SCRP contribution limits ↗</a>
+      <div class="rdesc">IRS limits: $24,500 elective deferral, $72,000 total (415 limit), catch-up amounts.</div>
+    </li>
+    <li>
+      <a href="https://cardinalatwork.stanford.edu/benefits-rewards/health-life-plans/health-savings-spending-accounts/health-savings-account" target="_blank" rel="noopener">Stanford HSA details ↗</a>
+      <div class="rdesc">Employer contributions, limits, and eligibility for the Choice HDHP.</div>
+    </li>
+    <li>
+      <a href="backdoor-roth.html">Backdoor Roth IRA — visual guide ↗</a>
+      <div class="rdesc">Step-by-step mechanism, pro-rata rule, and 30-year projections.</div>
+    </li>
+    <li>
+      <a href="https://www.bogleheads.org/wiki/Prioritizing_investments" target="_blank" rel="noopener">Bogleheads: Prioritizing investments ↗</a>
+      <div class="rdesc">The canonical investment priority framework this ladder is based on.</div>
+    </li>
+  </ul>
+</div>
+
+<div class="foot">
+  <b>Disclaimer:</b> This page is for educational purposes only and does not constitute financial, tax, or legal advice. Stanford benefit details are based on publicly available 2025–2026 plan documents and may change. Consult a qualified professional before making financial decisions.
+</div>
+<footer style="margin-top:24px;padding-top:16px;border-top:1px solid var(--bd2);font-size:13px;">
+  <a href="index.html" style="color:var(--roth);text-decoration:none;">← Back to tools</a>
+</footer>
+</div><!-- .c -->
+
+<script>
+// ─── THEME TOGGLE ──────────────────────────────────────
+function isDark(){
+  var t=document.documentElement.getAttribute('data-theme');
+  if(t==='dark') return true;
+  if(t==='light') return false;
+  return matchMedia('(prefers-color-scheme:dark)').matches;
+}
+var toggleBtn=document.getElementById('themeToggle');
+function updateToggleIcon(){toggleBtn.textContent=isDark()?'☀':'☾';}
+updateToggleIcon();
+toggleBtn.addEventListener('click',function(){
+  document.documentElement.setAttribute('data-theme',isDark()?'light':'dark');
+  updateToggleIcon();
+});
+
+// ─── ASSUMPTIONS ────────────────────────────────────────
+function toggleAssumptions(){
+  document.getElementById('assumptions').classList.toggle('collapsed');
+}
+
+function parseNum(id){
+  return parseInt(document.getElementById(id).value.replace(/[^0-9]/g,''),10)||0;
+}
+function val(id){return document.getElementById(id).value;}
+function fmt(n){return '$'+Math.round(n).toLocaleString();}
+
+function getInputs(){
+  var salary=parseNum('inSalary');
+  var years=parseInt(val('inYears'),10);
+  var filing=val('inFiling');
+  var expenses=parseNum('inExpenses');
+  var emergency=parseNum('inEmergency');
+  var debt=parseNum('inDebt');
+  var hdhp=val('inHealth')==='hdhp';
+  var familyCoverage=val('inCoverage')==='family';
+  var kids=val('inKids')==='yes';
+
+  // Stanford basic contribution % by years
+  var basicPct=[0,1,2,3,4,5][Math.min(years,5)]/100;
+  var basicAmt=Math.round(Math.min(salary,360000)*basicPct);
+
+  // Match: employee contributes 4%+ → Stanford matches 5%
+  var matchPct=0.05;
+  var employeeMatchTarget=0.04; // contribute 4% to get full 5% match
+  var matchAmt=Math.round(Math.min(salary,360000)*matchPct);
+  var employeeForMatch=Math.round(Math.min(salary,360000)*employeeMatchTarget);
+
+  // Emergency fund targets
+  var efMonths=parseInt(val('inMonths'),10);
+  var efTarget=expenses*efMonths;
+  var efGap=Math.max(0,efTarget-emergency);
+
+  // HSA
+  var hsaLimit=familyCoverage?8750:4400;
+  var stanfordHSA=0;
+  if(hdhp){
+    if(familyCoverage) stanfordHSA=2828;
+    else stanfordHSA=1316;
+  }
+  var hsaYou=hdhp?hsaLimit-stanfordHSA:0;
+
+  // 403b
+  var maxElective=24500;
+  var remainingElective=maxElective-employeeForMatch;
+
+  // Federal marginal rate (2026 brackets)
+  var fedRate;
+  if(filing==='married'){
+    if(salary>768700) fedRate=0.37;
+    else if(salary>512450) fedRate=0.35;
+    else if(salary>403550) fedRate=0.32;
+    else if(salary>211400) fedRate=0.24;
+    else if(salary>100800) fedRate=0.22;
+    else fedRate=0.12;
+  } else {
+    if(salary>640600) fedRate=0.37;
+    else if(salary>256225) fedRate=0.35;
+    else if(salary>201775) fedRate=0.32;
+    else if(salary>105700) fedRate=0.24;
+    else if(salary>50400) fedRate=0.22;
+    else fedRate=0.12;
+  }
+  // CA state marginal rate (2026) — includes 1% Mental Health Services Tax above $1M
+  var caRate;
+  if(filing==='married'){
+    if(salary>1485906) caRate=0.133;
+    else if(salary>1000000) caRate=0.123;
+    else if(salary>891542) caRate=0.113;
+    else if(salary>742958) caRate=0.103;
+    else if(salary>145448) caRate=0.093;
+    else caRate=0.08;
+  } else {
+    if(salary>1000000) caRate=0.133;
+    else if(salary>742953) caRate=0.123;
+    else if(salary>445771) caRate=0.113;
+    else if(salary>371479) caRate=0.103;
+    else if(salary>72724) caRate=0.093;
+    else caRate=0.08;
+  }
+  var effectiveMarginal=fedRate+caRate;
+
+  // 415 limit for mega backdoor
+  var totalLimit=72000;
+  var employerTotal=basicAmt+matchAmt;
+  var megaRoom=Math.max(0,totalLimit-maxElective-employerTotal);
+
+  return {
+    salary:salary, years:years, filing:filing, expenses:expenses,
+    emergency:emergency, debt:debt, hdhp:hdhp, familyCoverage:familyCoverage, kids:kids,
+    basicPct:basicPct, basicAmt:basicAmt, matchPct:matchPct, matchAmt:matchAmt,
+    employeeForMatch:employeeForMatch, efMonths:efMonths, efTarget:efTarget,
+    efGap:efGap, hsaLimit:hsaLimit, stanfordHSA:stanfordHSA, hsaYou:hsaYou,
+    maxElective:maxElective, remainingElective:remainingElective,
+    effectiveMarginal:effectiveMarginal, megaRoom:megaRoom, employerTotal:employerTotal,
+    totalLimit:totalLimit
+  };
+}
+
+// ─── FORMAT INPUTS ON BLUR ──────────────────────────────
+['inSalary','inExpenses','inEmergency','inDebt'].forEach(function(id){
+  var el=document.getElementById(id);
+  el.addEventListener('blur',function(){
+    var v=parseInt(el.value.replace(/[^0-9]/g,''),10)||0;
+    el.value=v.toLocaleString();
+    render();
+  });
+  el.addEventListener('keydown',function(e){if(e.key==='Enter'){el.blur();}});
+});
+['inYears','inFiling','inHealth','inCoverage','inKids','inMonths'].forEach(function(id){
+  document.getElementById(id).addEventListener('change',render);
+});
+
+// ─── STEPS ──────────────────────────────────────────────
+function buildSteps(d){
+  var steps=[];
+
+  // 1. High-interest debt
+  steps.push({
+    label:'Debt',
+    icon:'🔥',
+    iconBg:'var(--danger-bg)',
+    skip:d.debt===0,
+    build:function(d){
+      if(d.debt===0) return '<div class="co gr">'+
+        '<b>No high-interest debt — nice.</b> Skip ahead to building your emergency fund.</div>';
+
+      return '<div class="step-header"><div class="step-icon" style="background:var(--danger-bg)">🔥</div><div><div class="step-label">Rung 1</div><div class="step-title">Kill high-interest debt</div></div></div>'+
+        '<div class="mets"><div class="met"><div class="met-l">Debt balance</div><div class="met-v" style="color:var(--danger)">'+fmt(d.debt)+'</div><div class="met-s">Credit cards, personal loans</div></div>'+
+        '<div class="met"><div class="met-l">Your marginal rate</div><div class="met-v">~'+Math.round(d.effectiveMarginal*100)+'%</div><div class="met-s">Fed + CA state</div></div>'+
+        '<div class="met"><div class="met-l">Effective CC rate</div><div class="met-v" style="color:var(--danger)">~25%</div><div class="met-s">Guaranteed "return"</div></div></div>'+
+        '<div class="co dg"><b>Why this is #1:</b> Credit card interest (typically 20–28%) is a guaranteed negative return that no investment can reliably beat. Every dollar of CC debt you pay off is a risk-free 25%+ return. Even a 401(k) match can\'t compete if your debt rate is above ~15%, because the match is 100% return on that specific contribution — but debt interest compounds against your <em>entire</em> balance every month.</div>'+
+        '<div class="co"><b>The exception:</b> Low-interest debt (mortgage, federal student loans under ~5%) can coexist with investing. Only prioritize debt payoff over investing when the interest rate exceeds what you\'d reliably earn in the market (historically ~7% nominal). A common rule: pay off anything above 6–7% aggressively.</div>';
+    }
+  });
+
+  // 2. Starter emergency fund
+  steps.push({
+    label:'Starter EF',
+    icon:'🛟',
+    iconBg:'var(--warn-bg)',
+    build:function(d){
+      var months=d.expenses>0?(d.emergency/d.expenses).toFixed(1):'0';
+      var starterTarget=d.expenses; // 1 month
+      var starterPct=Math.min(100,Math.round(d.emergency/starterTarget*100));
+      var starterGap=Math.max(0,starterTarget-d.emergency);
+
+      return '<div class="step-header"><div class="step-icon" style="background:var(--warn-bg)">🛟</div><div><div class="step-label">Rung 2</div><div class="step-title">Starter emergency fund</div></div></div>'+
+        '<div class="mets"><div class="met"><div class="met-l">Current fund</div><div class="met-v">'+fmt(d.emergency)+'</div><div class="met-s">'+months+' months of fixed costs</div></div>'+
+        '<div class="met"><div class="met-l">Starter target (1 month)</div><div class="met-v"'+(starterPct>=100?' style="color:var(--roth)"':'')+'>'+fmt(starterTarget)+'</div><div class="met-s">Minimum to move on</div></div>'+
+        '<div class="met"><div class="met-l">Full target ('+d.efMonths+' months)</div><div class="met-v">'+fmt(d.efTarget)+'</div><div class="met-s">Completed later at rung 7</div></div></div>'+
+
+        '<div class="co"><b>Get to 1 month of fixed costs</b> ('+fmt(d.expenses)+') as fast as possible. This covers most single emergencies — a car repair, an unexpected bill, a gap between paychecks. Once you have 1 month, <b>move on to rung 3</b> to capture your Stanford match. Don\'t let the emergency fund delay free money.<br><br>'+
+        (d.emergency>=starterTarget?'<b>You\'re past 1 month</b> — move on to capturing your Stanford match. You\'ll circle back to build the full '+d.efMonths+'-month fund at rung 7.':
+         '<b>You have '+months+' months.</b> Focus here until you reach '+fmt(starterTarget)+', then move on.')+'</div>'+
+
+        '<div class="co"><b>Where to park it:</b> High-yield savings account (4–5% APY). Not invested in stocks — this money needs to be liquid and stable. Don\'t overthink the rate; the point is accessibility.</div>'+
+
+        '<div class="co"><b>Why split into two rungs?</b> The full '+d.efMonths+'-month target ('+fmt(d.efTarget)+') takes time to build. Meanwhile, your Stanford match is a 125% instant return on your contribution. Getting 1 month of safety, then capturing that match, then finishing the emergency fund is mathematically optimal.</div>';
+    }
+  });
+
+  // 3. Stanford SCRP match
+  steps.push({
+    label:'SCRP match',
+    icon:'🏛',
+    iconBg:'var(--k4-bg)',
+    build:function(d){
+      var totalEmployer=d.basicAmt+d.matchAmt;
+      var matchReturn=d.employeeForMatch>0?Math.round(d.matchAmt/d.employeeForMatch*100):0;
+
+      // Match tiers
+      var tiers=[
+        {you:1,match:1.5},{you:2,match:3},{you:3,match:4},{you:4,match:5}
+      ];
+
+      var tiersHtml='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0;">';
+      tiers.forEach(function(t){
+        var active=t.you<=4;
+        var highlight=t.you===4;
+        tiersHtml+='<div class="box'+(highlight?' info':'')+'" style="padding:12px;text-align:center;">'+
+          '<div class="tag">You: '+t.you+'%</div>'+
+          '<div class="ttl" style="font-size:14px;color:var(--k4)">'+t.match+'% match</div>'+
+          '<div class="det" style="font-size:11px;">'+fmt(Math.min(d.salary,360000)*t.match/100)+'/yr</div></div>';
+      });
+      tiersHtml+='</div>';
+
+      return '<div class="step-header"><div class="step-icon" style="background:var(--k4-bg)">🏛</div><div><div class="step-label">Rung 3</div><div class="step-title">Stanford SCRP — capture the match</div></div></div>'+
+        '<div class="mets"><div class="met"><div class="met-l">Your contribution (4%)</div><div class="met-v" style="color:var(--k4)">'+fmt(d.employeeForMatch)+'</div><div class="met-s">'+fmt(d.employeeForMatch/12)+'/month pre-tax</div></div>'+
+        '<div class="met"><div class="met-l">Stanford match (5%)</div><div class="met-v" style="color:var(--roth)">'+fmt(d.matchAmt)+'</div><div class="met-s">'+matchReturn+'% instant return</div></div>'+
+        '<div class="met"><div class="met-l">Stanford basic ('+Math.round(d.basicPct*100)+'%)</div><div class="met-v" style="color:var(--roth)">'+fmt(d.basicAmt)+'</div><div class="met-s">Year '+d.years+' — automatic, no action needed</div></div></div>'+
+
+        '<div class="co bl"><b>How Stanford\'s match works:</b> The SCRP has two employer contributions. The <b>basic contribution</b> is automatic — Stanford puts in 1% your first year, scaling to 5% at year 5+, regardless of what you contribute. The <b>matching contribution</b> requires you to contribute — it maxes out at 5% when you put in 4%+.</div>'+
+
+        '<div style="font-size:14px;font-weight:500;margin:18px 0 6px;">Match tiers (on compensation up to $360K)</div>'+
+        tiersHtml+
+
+        '<div class="co"><b>The optimal play:</b> Contribute at least <b>4%</b> to capture the full 5% match. At your salary of '+fmt(d.salary)+', that\'s '+fmt(d.employeeForMatch)+'/year from you, and '+fmt(totalEmployer)+'/year from Stanford. That\'s a <b>'+matchReturn+'% instant return</b> on your contribution before any investment growth — no investment comes close.<br><br>'+
+        '<b>Auto-enrollment note:</b> Stanford may have auto-enrolled you at 4% before-tax. Check your SCRP elections in <a href="https://cardinalatwork.stanford.edu" target="_blank" rel="noopener">Cardinal at Work</a> to confirm.<br><br>'+
+        '<b>Pre-tax vs. Roth 403(b):</b> At '+fmt(d.salary)+' income, the pre-tax (TDA) option gives you a tax break at your ~'+Math.round(d.effectiveMarginal*100)+'% marginal rate now. Roth makes sense if you expect higher rates in retirement. Most high earners benefit from pre-tax at this income level — but doing some Roth for diversification is reasonable.</div>'+
+
+        '<div class="co"><b>True-up provision:</b> If your contributions are uneven throughout the year, Stanford will true-up at year-end so you don\'t miss match. But don\'t rely on this — set it and forget it at 4%+ from day one.</div>'+
+
+        '<div class="cite">Source: <a href="https://cardinalatwork.stanford.edu/benefits-rewards/saving-retirement/stanford-contributory-retirement-plan-scrp/basic-and-matching" target="_blank" rel="noopener">Stanford SCRP Basic & Matching Contributions</a></div>';
+    }
+  });
+
+  // 4. HSA
+  steps.push({
+    label:'HSA',
+    icon:'🏥',
+    iconBg:'var(--accent-bg)',
+    skip:!d.hdhp,
+    build:function(d){
+      if(!d.hdhp) return '<div class="co"><b>You\'re on a copay plan</b>, so you\'re not HSA-eligible. If you switch to the Stanford Choice HDHP during open enrollment, you\'d unlock the triple tax advantage. Skip to rung 5.</div>';
+
+      return '<div class="step-header"><div class="step-icon" style="background:var(--accent-bg)">🏥</div><div><div class="step-label">Rung 4</div><div class="step-title">Max your HSA</div></div></div>'+
+        '<div class="mets"><div class="met"><div class="met-l">2026 IRS limit</div><div class="met-v" style="color:var(--accent)">'+fmt(d.hsaLimit)+'</div><div class="met-s">'+(d.familyCoverage?'Family':'Self-only')+' coverage</div></div>'+
+        '<div class="met"><div class="met-l">Stanford contributes</div><div class="met-v" style="color:var(--roth)">'+fmt(d.stanfordHSA)+'</div><div class="met-s">Free money (must elect HSA)</div></div>'+
+        '<div class="met"><div class="met-l">You contribute</div><div class="met-v">'+fmt(d.hsaYou)+'</div><div class="met-s">'+fmt(d.hsaYou/12)+'/month pre-tax</div></div></div>'+
+
+        '<div class="flow">'+
+          '<div class="box" style="min-width:100px;"><div class="tag">Pre-tax in</div><div class="ttl">No income tax</div><div class="det">Payroll deduction</div></div>'+
+          '<div class="arr">→</div>'+
+          '<div class="box hl" style="min-width:100px;"><div class="tag">Growth</div><div class="ttl">No tax on gains</div><div class="det">Invest in index funds</div></div>'+
+          '<div class="arr">→</div>'+
+          '<div class="box hl" style="min-width:100px;"><div class="tag">Withdrawal</div><div class="ttl">No tax out</div><div class="det">For medical expenses</div></div>'+
+        '</div>'+
+
+        '<div class="co gr"><b>The triple tax advantage:</b> HSA is the only account that\'s tax-free going in, growing, <em>and</em> coming out (for medical expenses). It\'s even better than a Roth IRA in this regard. After age 65, you can withdraw for any purpose (taxed like a Traditional IRA) — making it a stealth retirement account.<br><br>'+
+        '<b>The power move:</b> Pay medical expenses out of pocket now, let the HSA grow invested in index funds, and reimburse yourself years later. There\'s no time limit on reimbursement — keep your receipts.</div>'+
+
+        '<div class="co"><b>Important:</b> You must <em>elect</em> the HSA during enrollment to receive Stanford\'s '+fmt(d.stanfordHSA)+' contribution, even if you set your own contribution to $0. Don\'t leave free money on the table.</div>'+
+
+        '<div class="cite">Source: <a href="https://cardinalatwork.stanford.edu/benefits-rewards/health-life-plans/health-savings-spending-accounts/health-savings-account" target="_blank" rel="noopener">Stanford HSA Details</a></div>';
+    }
+  });
+
+  // 5. Max 403(b)
+  steps.push({
+    label:'Max 403(b)',
+    icon:'📈',
+    iconBg:'var(--k4-bg)',
+    build:function(d){
+      return '<div class="step-header"><div class="step-icon" style="background:var(--k4-bg)">📈</div><div><div class="step-label">Rung 5</div><div class="step-title">Max the SCRP 403(b)</div></div></div>'+
+        '<div class="mets"><div class="met"><div class="met-l">2026 elective limit</div><div class="met-v" style="color:var(--k4)">'+fmt(d.maxElective)+'</div><div class="met-s">Pre-tax and/or Roth combined</div></div>'+
+        '<div class="met"><div class="met-l">Already contributing (4%)</div><div class="met-v">'+fmt(d.employeeForMatch)+'</div><div class="met-s">From rung 3 (match)</div></div>'+
+        '<div class="met"><div class="met-l">Increase by</div><div class="met-v" style="color:var(--k4)">'+fmt(d.remainingElective)+'</div><div class="met-s">'+fmt(d.remainingElective/12)+'/month more</div></div></div>'+
+
+        '<div class="co"><b>You\'re already contributing 4% for the match.</b> Now crank it up to the IRS limit of '+fmt(d.maxElective)+'. That\'s an additional '+fmt(d.remainingElective)+'/year ('+fmt(d.remainingElective/12)+'/month).<br><br>'+
+        'At your ~'+Math.round(d.effectiveMarginal*100)+'% marginal rate, every $1,000 of pre-tax contributions saves you ~$'+Math.round(d.effectiveMarginal*1000)+' in taxes this year. The '+fmt(d.remainingElective)+' increase saves roughly '+fmt(d.remainingElective*d.effectiveMarginal)+' in taxes.</div>'+
+
+        '<div class="co"><b>Pre-tax vs. Roth at this rung:</b> The conventional wisdom (Bogleheads, Ramit Sethi) is clear — at a ~'+Math.round(d.effectiveMarginal*100)+'% marginal rate, <b>pre-tax wins</b> unless you\'re very confident tax rates will be dramatically higher in retirement. You\'re buying a tax deduction at the peak of your earning years. Your effective rate in retirement will almost certainly be lower.<br><br>'+
+        'That said, a small Roth allocation (10–20% of contributions) buys <b>tax diversification</b> — optionality if rates rise legislatively.</div>'+
+
+        '<div class="co"><b>Note for ages 50+:</b> You get an extra $8,000 catch-up contribution ($32,500 total). Ages 60–63 get $11,250 extra — but high earners (FICA wages >$150K in prior year) must make catch-up contributions on a <em>Roth basis</em> starting 2026.</div>'+
+
+        '<div class="cite">Source: <a href="https://cardinalatwork.stanford.edu/benefits-rewards/saving-retirement/stanford-contributory-retirement-plan-scrp/basic-and-matching-0" target="_blank" rel="noopener">2026 SCRP Contribution Limits</a></div>';
+    }
+  });
+
+  // 6. Backdoor Roth
+  steps.push({
+    label:'Backdoor Roth',
+    icon:'🚪',
+    iconBg:'var(--roth-bg)',
+    build:function(d){
+      return '<div class="step-header"><div class="step-icon" style="background:var(--roth-bg)">🚪</div><div><div class="step-label">Rung 6</div><div class="step-title">Backdoor Roth IRA</div></div></div>'+
+        '<div class="mets"><div class="met"><div class="met-l">Annual contribution</div><div class="met-v" style="color:var(--roth)">$7,000</div><div class="met-s">$583/month after-tax</div></div>'+
+        '<div class="met"><div class="met-l">Tax on conversion</div><div class="met-v" style="color:var(--roth)">$0</div><div class="met-s">Non-deductible → Roth</div></div>'+
+        '<div class="met"><div class="met-l">30-year value (at 7%)</div><div class="met-v" style="color:var(--roth)">~$661K</div><div class="met-s">100% tax-free</div></div></div>'+
+
+        '<div class="flow">'+
+          '<div class="box"><div class="tag">After-tax cash</div><div class="ttl"><span class="mono">$7,000</span></div><div class="det">Already taxed</div></div>'+
+          '<div class="arr">→</div>'+
+          '<div class="box info"><div class="tag">Traditional IRA</div><div class="ttl">Non-deductible</div><div class="det">File Form 8606</div></div>'+
+          '<div class="arr" style="color:var(--roth)">→</div>'+
+          '<div class="box hl"><div class="tag">Roth IRA</div><div class="ttl"><span class="badge bg">$0 tax</span></div><div class="det">Convert within days</div></div>'+
+        '</div>'+
+
+        '<div class="co gr"><b>Why this matters at '+fmt(d.salary)+':</b> You\'re above the Roth IRA income limit ('+
+        (d.filing==='married'?'$236K MFJ':'$150K single')+
+        '), so direct contributions are blocked. The backdoor — contribute non-deductible to a Traditional IRA, then immediately convert to Roth — is the workaround. It\'s explicitly legal and the IRS is aware of it.<br><br>'+
+        'This is <b>additional</b> tax-advantaged space on top of your 403(b). $7,000/year compounding tax-free for 30 years at 7% becomes roughly $661K — all withdrawable tax-free.</div>'+
+
+        '<div class="co dg"><b>Pro-rata warning:</b> If you have <em>any</em> pre-tax money in a Traditional, SEP, or SIMPLE IRA, the conversion becomes partially taxable. Roll pre-tax IRA money into your Stanford 403(b) first (most plans accept rollovers). 403(b) balances are not included in the pro-rata calculation.</div>'+
+
+        '<p style="margin-top:16px;font-size:14px;"><a href="backdoor-roth.html" style="color:var(--roth);font-weight:500;">Read the full backdoor Roth visual guide →</a></p>';
+    }
+  });
+
+  // 7. Complete emergency fund
+  steps.push({
+    label:'Complete EF',
+    icon:'🛟',
+    iconBg:'var(--warn-bg)',
+    build:function(d){
+      var pct=Math.min(100,Math.round(d.emergency/d.efTarget*100));
+      var months=d.expenses>0?(d.emergency/d.expenses).toFixed(1):'0';
+      var gap=d.efGap;
+
+      return '<div class="step-header"><div class="step-icon" style="background:var(--warn-bg)">🛟</div><div><div class="step-label">Rung 7</div><div class="step-title">Complete emergency fund</div></div></div>'+
+        '<div class="mets"><div class="met"><div class="met-l">Current fund</div><div class="met-v">'+fmt(d.emergency)+'</div><div class="met-s">'+months+' months of fixed costs</div></div>'+
+        '<div class="met"><div class="met-l">'+d.efMonths+'-month target</div><div class="met-v"'+(pct>=100?' style="color:var(--roth)"':'')+'>'+fmt(d.efTarget)+'</div><div class="met-s">'+fmt(d.expenses)+'/mo &times; '+d.efMonths+' months</div></div>'+
+        '<div class="met"><div class="met-l">Remaining gap</div><div class="met-v"'+(gap===0?' style="color:var(--roth)"':'')+'>'+fmt(gap)+'</div><div class="met-s">'+pct+'% funded</div></div></div>'+
+
+        '<div class="co"><b>Now finish what you started in rung 2.</b> You built a 1-month starter fund, then captured your match, maxed your HSA, 403(b), and backdoor Roth. Now top off the emergency fund to '+d.efMonths+' months ('+fmt(d.efTarget)+').<br><br>'+
+        (d.emergency>=d.efTarget?'<b>You\'ve already hit your '+d.efMonths+'-month target.</b> Move on to the final rung.':
+         '<b>Gap: '+fmt(gap)+'.</b> Build this up in a HYSA alongside your ongoing contributions to tax-advantaged accounts. No need to pause investing — split extra cash between this and rung 8.')+'</div>'+
+
+        '<div class="co"><b>Why '+d.efMonths+' months?</b> A dual-income household in a stable field (tech + professional) can lean toward 3–4 months. Single income, variable compensation, or job market uncertainty pushes toward 6. Adjust the target in the assumptions panel above.</div>';
+    }
+  });
+
+  // 8. Beyond
+  steps.push({
+    label:'Beyond',
+    icon:'🎯',
+    iconBg:'var(--tax-bg)',
+    build:function(d){
+      var megaHtml='';
+      if(d.megaRoom>0){
+        megaHtml='<div class="co bl"><b>Mega backdoor Roth — maybe:</b> The SCRP\'s 415(c) total limit is '+fmt(d.totalLimit)+'. With your '+fmt(d.maxElective)+' elective + '+fmt(d.employerTotal)+' employer contributions, there\'s theoretically '+fmt(d.megaRoom)+' of room for after-tax CRA contributions. <em>However</em>, this only becomes a mega backdoor Roth if Stanford\'s plan allows <b>in-plan Roth conversion</b> of after-tax money — and this isn\'t clearly documented. <b>Call Fidelity (888-793-8733) and ask:</b> "Can I make after-tax contributions to my SCRP and convert them to Roth in-plan?" If yes, this is an incredible opportunity for an additional '+fmt(d.megaRoom)+'/year of tax-free growth.</div>';
+      }
+
+      var kidsHtml='';
+      if(d.kids){
+        kidsHtml='<div class="box ac" style="margin-top:12px;"><div class="ttl">529 plan — Tax-free growth for education</div><div class="det">California\'s ScholarShare 529 or any state\'s plan. No state tax deduction in CA, so pick the plan with the lowest fees. $18,000/year per beneficiary (gift tax exclusion). Front-load 5 years ($90K) if you can.</div></div>';
+      }
+
+      return '<div class="step-header"><div class="step-icon" style="background:var(--tax-bg)">🎯</div><div><div class="step-label">Rung 8</div><div class="step-title">Beyond — taxable &amp; other goals</div></div></div>'+
+
+        '<div class="co"><b>If you\'ve maxed everything above</b>, congratulations — you\'re investing '+fmt(d.maxElective+7000+(d.hdhp?d.hsaYou:0))+'/year in tax-advantaged accounts (plus '+fmt(d.employerTotal+(d.hdhp?d.stanfordHSA:0))+' from Stanford/HSA). Every additional dollar goes to taxable brokerage or other goals.</div>'+
+
+        megaHtml+
+
+        kidsHtml+
+
+        '<div class="box" style="margin-top:12px;"><div class="ttl">Taxable brokerage — The unlimited account</div><div class="det">No contribution limits, no income restrictions, no age restrictions on withdrawal. Less tax-efficient than retirement accounts (annual dividend tax drag, capital gains at withdrawal), but infinitely flexible. Use for early retirement, large purchases, or anything before age 59½.</div></div>';
+    }
+  });
+
+  return steps;
+}
+
+// ─── RENDER ─────────────────────────────────────────────
+var pillsEl=document.getElementById('pills');
+var panelEl=document.getElementById('panel');
+var currentStep=0;
+
+function render(){
+  var d=getInputs();
+  var steps=buildSteps(d);
+  pillsEl.innerHTML='';
+  steps.forEach(function(s,i){
+    if(i>0){
+      var sep=document.createElement('span');
+      sep.className='pill-sep';
+      sep.textContent='›';
+      pillsEl.appendChild(sep);
+    }
+    var p=document.createElement('button');
+    var skipClass=s.skip?' done':'';
+    p.className='pill'+(i===currentStep?' on':'')+skipClass;
+    p.innerHTML='<span class="step-num">'+(i+1)+'</span>'+s.label;
+    p.onclick=function(){currentStep=i;render();};
+    pillsEl.appendChild(p);
+  });
+  var html=steps[currentStep].build(d);
+  // Add next rung button (unless last step)
+  if(currentStep<steps.length-1){
+    var next=steps[currentStep+1];
+    html+='<div class="next-rung" onclick="currentStep='+(currentStep+1)+';render();window.scrollTo({top:0,behavior:\'smooth\'})">'+
+      '<span class="next-rung-label">Next:</span> <span class="next-rung-title">'+next.label+'</span>'+
+      '<span class="next-rung-arrow">→</span></div>';
+  }
+  panelEl.innerHTML=html;
+}
+render();
+</script>
+</body>
+</html>
