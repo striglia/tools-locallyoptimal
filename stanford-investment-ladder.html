@@ -222,6 +222,13 @@
         <option value="yes">Yes</option>
       </select>
     </div>
+    <div class="field" style="grid-column:1/-1;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="inCautiousEF" style="width:16px;height:16px;cursor:pointer;">
+        Cautious emergency fund strategy
+        <span class="tip" data-tip="Most sources (r/personalfinance, Money Guy, Bogleheads) recommend completing your full emergency fund before maximizing retirement contributions. The default aggressive ordering delays the full EF to prioritize tax-advantaged space — defensible for dual-income, high-earner households with stable jobs, but not mainstream. Check this box for the more conventional approach.">?</span>
+      </label>
+    </div>
   </div>
 </div>
 
@@ -308,6 +315,7 @@ function getInputs(){
   var hdhp=val('inHealth')==='hdhp';
   var familyCoverage=val('inCoverage')==='family';
   var kids=val('inKids')==='yes';
+  var cautiousEF=document.getElementById('inCautiousEF').checked;
 
   // Stanford basic contribution % by years
   var basicPct=[0,1,2,3,4,5][Math.min(years,5)]/100;
@@ -386,7 +394,7 @@ function getInputs(){
     efGap:efGap, hsaLimit:hsaLimit, stanfordHSA:stanfordHSA, hsaYou:hsaYou,
     maxElective:maxElective, remainingElective:remainingElective,
     effectiveMarginal:effectiveMarginal, megaRoom:megaRoom, employerTotal:employerTotal,
-    totalLimit:totalLimit
+    totalLimit:totalLimit, cautiousEF:cautiousEF
   };
 }
 
@@ -400,7 +408,7 @@ function getInputs(){
   });
   el.addEventListener('keydown',function(e){if(e.key==='Enter'){el.blur();}});
 });
-['inYears','inFiling','inHealth','inCoverage','inKids','inMonths'].forEach(function(id){
+['inYears','inFiling','inHealth','inCoverage','inKids','inMonths','inCautiousEF'].forEach(function(id){
   document.getElementById(id).addEventListener('change',render);
 });
 
@@ -438,18 +446,32 @@ function buildSteps(d){
       var starterPct=Math.min(100,Math.round(d.emergency/starterTarget*100));
       var starterGap=Math.max(0,starterTarget-d.emergency);
 
+      if(d.cautiousEF){
+        // Cautious: full EF comes right after match (rung 4 position)
+        return '<div class="step-header"><div class="step-icon" style="background:var(--warn-bg)">🛟</div><div><div class="step-label">Rung 2</div><div class="step-title">Starter emergency fund</div></div></div>'+
+          '<div class="mets"><div class="met"><div class="met-l">Current fund</div><div class="met-v">'+fmt(d.emergency)+'</div><div class="met-s">'+months+' months of fixed costs</div></div>'+
+          '<div class="met"><div class="met-l">Starter target (1 month)</div><div class="met-v"'+(starterPct>=100?' style="color:var(--roth)"':'')+'>'+fmt(starterTarget)+'</div><div class="met-s">Minimum to move on</div></div>'+
+          '<div class="met"><div class="met-l">Full target ('+d.efMonths+' months)</div><div class="met-v">'+fmt(d.efTarget)+'</div><div class="met-s">Completed at next EF rung</div></div></div>'+
+          '<div class="co"><b>Get to 1 month of fixed costs</b> ('+fmt(d.expenses)+') as fast as possible. This covers most single emergencies — a car repair, an unexpected bill, a gap between paychecks. Once you have 1 month, <b>move on to rung 3</b> to capture your Stanford match. Don\'t let the emergency fund delay free money.<br><br>'+
+          (d.emergency>=starterTarget?'<b>You\'re past 1 month</b> — move on to capturing your Stanford match. You\'ll complete the full '+d.efMonths+'-month fund soon after.':
+           '<b>You have '+months+' months.</b> Focus here until you reach '+fmt(starterTarget)+', then move on.')+'</div>'+
+          '<div class="co"><b>Where to park it:</b> High-yield savings account (4–5% APY). Not invested in stocks — this money needs to be liquid and stable. Don\'t overthink the rate; the point is accessibility.</div>'+
+          '<div class="co"><b>You\'re using the cautious strategy</b> — your full emergency fund comes right after the employer match, before maximizing retirement contributions. This is the approach recommended by the <a href="https://moneyguy.com/guide/foo/" target="_blank" rel="noopener">Money Guy Financial Order of Operations</a>, the <a href="https://ratiodebt.com/blog/personalfinance-flowchart-explained/" target="_blank" rel="noopener">r/personalfinance flowchart</a>, and the <a href="https://boglecenter.net/bogleheads-chapter-series-prioritizing-investments/" target="_blank" rel="noopener">Bogleheads priority list</a>. You can switch to the aggressive strategy in the settings above.</div>';
+      }
+
+      // Aggressive (default): split EF, full completion comes after retirement accounts
       return '<div class="step-header"><div class="step-icon" style="background:var(--warn-bg)">🛟</div><div><div class="step-label">Rung 2</div><div class="step-title">Starter emergency fund</div></div></div>'+
         '<div class="mets"><div class="met"><div class="met-l">Current fund</div><div class="met-v">'+fmt(d.emergency)+'</div><div class="met-s">'+months+' months of fixed costs</div></div>'+
         '<div class="met"><div class="met-l">Starter target (1 month)</div><div class="met-v"'+(starterPct>=100?' style="color:var(--roth)"':'')+'>'+fmt(starterTarget)+'</div><div class="met-s">Minimum to move on</div></div>'+
-        '<div class="met"><div class="met-l">Full target ('+d.efMonths+' months)</div><div class="met-v">'+fmt(d.efTarget)+'</div><div class="met-s">Completed later at rung 7</div></div></div>'+
+        '<div class="met"><div class="met-l">Full target ('+d.efMonths+' months)</div><div class="met-v">'+fmt(d.efTarget)+'</div><div class="met-s">Completed later</div></div></div>'+
 
         '<div class="co"><b>Get to 1 month of fixed costs</b> ('+fmt(d.expenses)+') as fast as possible. This covers most single emergencies — a car repair, an unexpected bill, a gap between paychecks. Once you have 1 month, <b>move on to rung 3</b> to capture your Stanford match. Don\'t let the emergency fund delay free money.<br><br>'+
-        (d.emergency>=starterTarget?'<b>You\'re past 1 month</b> — move on to capturing your Stanford match. You\'ll circle back to build the full '+d.efMonths+'-month fund at rung 7.':
+        (d.emergency>=starterTarget?'<b>You\'re past 1 month</b> — move on to capturing your Stanford match. You\'ll circle back to build the full '+d.efMonths+'-month fund later.':
          '<b>You have '+months+' months.</b> Focus here until you reach '+fmt(starterTarget)+', then move on.')+'</div>'+
 
         '<div class="co"><b>Where to park it:</b> High-yield savings account (4–5% APY). Not invested in stocks — this money needs to be liquid and stable. Don\'t overthink the rate; the point is accessibility.</div>'+
 
-        '<div class="co"><b>Why split into two rungs?</b> The full '+d.efMonths+'-month target ('+fmt(d.efTarget)+') takes time to build. Meanwhile, your Stanford match is a 125% instant return on your contribution. Getting 1 month of safety, then capturing that match, then finishing the emergency fund is mathematically optimal.</div>';
+        '<div class="co"><b>Why split into two rungs?</b> The full '+d.efMonths+'-month target ('+fmt(d.efTarget)+') takes time to build. Meanwhile, your Stanford match is a 125% instant return on your contribution. Getting 1 month of safety, then capturing that match, then finishing the emergency fund later is mathematically optimal. <em>Note: most mainstream guides (</em><a href="https://moneyguy.com/guide/foo/" target="_blank" rel="noopener">Money Guy</a>, <a href="https://ratiodebt.com/blog/personalfinance-flowchart-explained/" target="_blank" rel="noopener">r/personalfinance</a><em>) recommend completing the full EF before maximizing retirement contributions. This aggressive ordering follows </em><a href="https://www.whitecoatinvestor.com/financial-waterfalls-for-new-residents-and-attendings/" target="_blank" rel="noopener">White Coat Investor\'s attending waterfall</a><em>, which places the full EF after tax-advantaged accounts for high-income earners with stable jobs. You can switch to the cautious strategy in the settings above.</em></div>';
     }
   });
 
@@ -498,7 +520,47 @@ function buildSteps(d){
     }
   });
 
-  // 4. HSA
+  // Complete emergency fund — position depends on cautiousEF setting
+  var completeEFStep={
+    label:'Complete EF',
+    icon:'🛟',
+    iconBg:'var(--warn-bg)',
+    build:function(d){
+      var pct=Math.min(100,Math.round(d.emergency/d.efTarget*100));
+      var months=d.expenses>0?(d.emergency/d.expenses).toFixed(1):'0';
+      var gap=d.efGap;
+
+      if(d.cautiousEF){
+        return '<div class="step-header"><div class="step-icon" style="background:var(--warn-bg)">🛟</div><div><div class="step-label">Complete your safety net</div><div class="step-title">Full emergency fund</div></div></div>'+
+          '<div class="mets"><div class="met"><div class="met-l">Current fund</div><div class="met-v">'+fmt(d.emergency)+'</div><div class="met-s">'+months+' months of fixed costs</div></div>'+
+          '<div class="met"><div class="met-l">'+d.efMonths+'-month target</div><div class="met-v"'+(pct>=100?' style="color:var(--roth)"':'')+'>'+fmt(d.efTarget)+'</div><div class="met-s">'+fmt(d.expenses)+'/mo &times; '+d.efMonths+' months</div></div>'+
+          '<div class="met"><div class="met-l">Remaining gap</div><div class="met-v"'+(gap===0?' style="color:var(--roth)"':'')+'>'+fmt(gap)+'</div><div class="met-s">'+pct+'% funded</div></div></div>'+
+          '<div class="co"><b>Complete your emergency fund before maximizing retirement contributions.</b> You built a 1-month starter, then captured your Stanford match. Now build the full '+d.efMonths+'-month cushion ('+fmt(d.efTarget)+') before going further.<br><br>'+
+          (d.emergency>=d.efTarget?'<b>You\'ve already hit your '+d.efMonths+'-month target.</b> Move on to maximizing your tax-advantaged accounts.':
+           '<b>Gap: '+fmt(gap)+'.</b> Focus on this before maxing your HSA and 403(b). The goal is to avoid ever raiding retirement accounts during an emergency.')+'</div>'+
+          '<div class="co"><b>Why complete it now?</b> This follows the approach recommended by the <a href="https://moneyguy.com/guide/foo/" target="_blank" rel="noopener">Money Guy Financial Order of Operations</a> (step 4 of 9), the <a href="https://ratiodebt.com/blog/personalfinance-flowchart-explained/" target="_blank" rel="noopener">r/personalfinance flowchart</a>, and the <a href="https://boglecenter.net/bogleheads-chapter-series-prioritizing-investments/" target="_blank" rel="noopener">Bogleheads investment priority list</a> — all of which place the full emergency fund before maximizing retirement contributions. The logic: without adequate cash reserves, an emergency forces you to liquidate investments at potentially the worst time, or take on high-interest debt.</div>'+
+          '<div class="co"><b>Why '+d.efMonths+' months?</b> A dual-income household in a stable field (tech + professional) can lean toward 3–4 months. Single income, variable compensation, or job market uncertainty pushes toward 6. Adjust the target in the assumptions panel above.</div>';
+      }
+
+      // Aggressive version
+      return '<div class="step-header"><div class="step-icon" style="background:var(--warn-bg)">🛟</div><div><div class="step-label">Circle back</div><div class="step-title">Complete emergency fund</div></div></div>'+
+        '<div class="mets"><div class="met"><div class="met-l">Current fund</div><div class="met-v">'+fmt(d.emergency)+'</div><div class="met-s">'+months+' months of fixed costs</div></div>'+
+        '<div class="met"><div class="met-l">'+d.efMonths+'-month target</div><div class="met-v"'+(pct>=100?' style="color:var(--roth)"':'')+'>'+fmt(d.efTarget)+'</div><div class="met-s">'+fmt(d.expenses)+'/mo &times; '+d.efMonths+' months</div></div>'+
+        '<div class="met"><div class="met-l">Remaining gap</div><div class="met-v"'+(gap===0?' style="color:var(--roth)"':'')+'>'+fmt(gap)+'</div><div class="met-s">'+pct+'% funded</div></div></div>'+
+        '<div class="co"><b>Now finish what you started in rung 2.</b> You built a 1-month starter fund, then captured your match, maxed your HSA, 403(b), and backdoor Roth. Now top off the emergency fund to '+d.efMonths+' months ('+fmt(d.efTarget)+').<br><br>'+
+        (d.emergency>=d.efTarget?'<b>You\'ve already hit your '+d.efMonths+'-month target.</b> Move on to the final rung.':
+         '<b>Gap: '+fmt(gap)+'.</b> Build this up in a HYSA alongside your ongoing contributions to tax-advantaged accounts. No need to pause investing — split extra cash between this and the next rung.')+'</div>'+
+        '<div class="co"><b>Why delay it?</b> This follows the <a href="https://www.whitecoatinvestor.com/financial-waterfalls-for-new-residents-and-attendings/" target="_blank" rel="noopener">White Coat Investor\'s attending waterfall</a>, which places the full emergency fund after tax-advantaged accounts for high-income earners. The reasoning: Roth IRA contribution space is use-it-or-lose-it ($7K/year cap), your 1-month starter covers most single emergencies, and dual-income households have implicit insurance. Note that even among aggressive approaches, some — like the <a href="https://moneyguy.com/guide/foo/" target="_blank" rel="noopener">Money Guy FOO</a> — would place this before maxing your 403(b) pre-tax contributions. You can switch to the cautious strategy in the settings above.</div>'+
+        '<div class="co"><b>Why '+d.efMonths+' months?</b> A dual-income household in a stable field (tech + professional) can lean toward 3–4 months. Single income, variable compensation, or job market uncertainty pushes toward 6. Adjust the target in the assumptions panel above.</div>';
+    }
+  };
+
+  // Cautious: insert full EF right after the match, before HSA
+  if(d.cautiousEF){
+    steps.push(completeEFStep);
+  }
+
+  // HSA
   steps.push({
     label:'HSA',
     icon:'🏥',
@@ -582,30 +644,12 @@ function buildSteps(d){
     }
   });
 
-  // 7. Complete emergency fund
-  steps.push({
-    label:'Complete EF',
-    icon:'🛟',
-    iconBg:'var(--warn-bg)',
-    build:function(d){
-      var pct=Math.min(100,Math.round(d.emergency/d.efTarget*100));
-      var months=d.expenses>0?(d.emergency/d.expenses).toFixed(1):'0';
-      var gap=d.efGap;
+  if(!d.cautiousEF){
+    // Aggressive: full EF comes after all retirement accounts
+    steps.push(completeEFStep);
+  }
 
-      return '<div class="step-header"><div class="step-icon" style="background:var(--warn-bg)">🛟</div><div><div class="step-label">Rung 7</div><div class="step-title">Complete emergency fund</div></div></div>'+
-        '<div class="mets"><div class="met"><div class="met-l">Current fund</div><div class="met-v">'+fmt(d.emergency)+'</div><div class="met-s">'+months+' months of fixed costs</div></div>'+
-        '<div class="met"><div class="met-l">'+d.efMonths+'-month target</div><div class="met-v"'+(pct>=100?' style="color:var(--roth)"':'')+'>'+fmt(d.efTarget)+'</div><div class="met-s">'+fmt(d.expenses)+'/mo &times; '+d.efMonths+' months</div></div>'+
-        '<div class="met"><div class="met-l">Remaining gap</div><div class="met-v"'+(gap===0?' style="color:var(--roth)"':'')+'>'+fmt(gap)+'</div><div class="met-s">'+pct+'% funded</div></div></div>'+
-
-        '<div class="co"><b>Now finish what you started in rung 2.</b> You built a 1-month starter fund, then captured your match, maxed your HSA, 403(b), and backdoor Roth. Now top off the emergency fund to '+d.efMonths+' months ('+fmt(d.efTarget)+').<br><br>'+
-        (d.emergency>=d.efTarget?'<b>You\'ve already hit your '+d.efMonths+'-month target.</b> Move on to the final rung.':
-         '<b>Gap: '+fmt(gap)+'.</b> Build this up in a HYSA alongside your ongoing contributions to tax-advantaged accounts. No need to pause investing — split extra cash between this and rung 8.')+'</div>'+
-
-        '<div class="co"><b>Why '+d.efMonths+' months?</b> A dual-income household in a stable field (tech + professional) can lean toward 3–4 months. Single income, variable compensation, or job market uncertainty pushes toward 6. Adjust the target in the assumptions panel above.</div>';
-    }
-  });
-
-  // 8. Beyond
+  // Beyond
   steps.push({
     label:'Beyond',
     icon:'🎯',
