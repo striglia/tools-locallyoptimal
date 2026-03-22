@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Backdoor Roth IRA — A Visual Guide for High-Income Earners</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg:#FAFAF8;--bg2:#F2F1EE;--bg3:#E8E7E3;
+    --tx:#1A1A18;--tx2:#6B6A65;--tx3:#9C9B96;
+    --bd:rgba(0,0,0,0.1);--bd2:rgba(0,0,0,0.05);
+    --roth:#0E7C5F;--roth-bg:#E1F5EE;
+    --k4:#2B6DB5;--k4-bg:#E6F1FB;
+    --tax:#73726C;--tax-bg:#F1EFE8;
+    --danger:#C43030;--danger-bg:#FCEBEB;
+    --warn:#9A6B10;--warn-bg:#FDF5E6;
+    --fn:'DM Sans',system-ui,sans-serif;
+    --mo:'JetBrains Mono',monospace;
+  }
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#1A1A18;--bg2:#252523;--bg3:#333331;
+    --tx:#E8E7E3;--tx2:#9C9B96;--tx3:#6B6A65;
+    --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.05);
+    --roth:#3DC99A;--roth-bg:#0A3D2E;
+    --k4:#6AACEF;--k4-bg:#0C2E4D;
+    --tax:#9C9B96;--tax-bg:#2C2C2A;
+    --danger:#F09595;--danger-bg:#3A1414;
+    --warn:#EFB84C;--warn-bg:#3A2E10;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#1A1A18;--bg2:#252523;--bg3:#333331;
+    --tx:#E8E7E3;--tx2:#9C9B96;--tx3:#6B6A65;
+    --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.05);
+    --roth:#3DC99A;--roth-bg:#0A3D2E;
+    --k4:#6AACEF;--k4-bg:#0C2E4D;
+    --tax:#9C9B96;--tax-bg:#2C2C2A;
+    --danger:#F09595;--danger-bg:#3A1414;
+    --warn:#EFB84C;--warn-bg:#3A2E10;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--fn);background:var(--bg);color:var(--tx);line-height:1.65;-webkit-font-smoothing:antialiased;}
+  .c{max-width:760px;margin:0 auto;padding:48px 24px 80px;}
+  h1{font-size:30px;font-weight:600;letter-spacing:-0.5px;margin-bottom:6px;}
+  .sub{font-size:15px;color:var(--tx2);margin-bottom:48px;max-width:600px;}
+  .sec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--tx3);margin-bottom:14px;}
+  h2{font-size:22px;font-weight:600;letter-spacing:-0.3px;margin-bottom:20px;}
+  /* Stepper */
+  .pills{display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap;}
+  .pill{padding:7px 15px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;user-select:none;border:none;background:var(--bg2);color:var(--tx2);}
+  .pill:hover{background:var(--bg3);}
+  .pill.on{background:var(--tx);color:var(--bg);}
+  /* Flow */
+  .flow{display:flex;align-items:stretch;margin:14px 0;gap:0;flex-wrap:wrap;}
+  @media(max-width:600px){.flow{flex-direction:column;}.arr{transform:rotate(90deg);width:auto!important;min-width:auto!important;padding:4px 0;}}
+  .box{flex:1;min-width:120px;padding:16px 18px;border-radius:12px;border:1px solid var(--bd);background:var(--bg);}
+  .box.hl{border-color:var(--roth);background:var(--roth-bg);}
+  .box.info{border-color:var(--k4);background:var(--k4-bg);}
+  .box.wr{border-color:var(--warn);background:var(--warn-bg);}
+  .box.w2{flex:2;}
+  .box.off{opacity:.45;border-style:dashed;}
+  .arr{display:flex;align-items:center;justify-content:center;width:42px;min-width:42px;color:var(--tx3);font-size:18px;}
+  .arr.lbl{flex-direction:column;font-size:11px;font-weight:500;color:var(--roth);gap:2px;}
+  .tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);margin-bottom:5px;}
+  .ttl{font-size:15px;font-weight:500;margin-bottom:3px;}
+  .det{font-size:13px;color:var(--tx2);line-height:1.55;}
+  .mono{font-family:var(--mo);font-size:14px;font-weight:500;}
+  .badge{display:inline-block;padding:2px 10px;border-radius:100px;font-size:11px;font-weight:600;}
+  .bg{background:var(--roth-bg);color:var(--roth);}
+  .br{background:var(--danger-bg);color:var(--danger);}
+  .bw{background:var(--warn-bg);color:var(--warn);}
+  .co{margin:18px 0 0;padding:15px 18px;border-radius:10px;background:var(--bg2);font-size:14px;color:var(--tx2);line-height:1.7;border-left:3px solid var(--bg3);}
+  .co b{color:var(--tx);font-weight:500;}
+  .co.dg{border-left-color:var(--danger);background:var(--danger-bg);}
+  .hr{height:1px;background:var(--bd2);margin:52px 0;}
+  /* Controls */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:26px;}
+  @media(max-width:500px){.grid2{grid-template-columns:1fr;}}
+  .ctrl-h{display:flex;justify-content:space-between;font-size:13px;color:var(--tx2);margin-bottom:6px;}
+  .ctrl-v{font-family:var(--mo);font-weight:500;font-size:14px;color:var(--tx);}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:var(--bg3);outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--tx);border:2px solid var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.2);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--tx);border:2px solid var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.2);cursor:pointer;}
+  /* Metrics */
+  .mets{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px;}
+  @media(max-width:500px){.mets{grid-template-columns:1fr;}}
+  .met{padding:14px 16px;border-radius:12px;background:var(--bg2);border:1px solid var(--bd2);}
+  .met-l{font-size:11px;color:var(--tx3);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+  .met-d{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .met-v{font-family:var(--mo);font-size:22px;font-weight:500;letter-spacing:-.5px;}
+  .met-s{font-size:11px;color:var(--tx3);margin-top:3px;}
+  .lgd{display:flex;gap:18px;margin-bottom:14px;font-size:12px;color:var(--tx2);flex-wrap:wrap;}
+  .lgd-i{display:flex;align-items:center;gap:5px;}
+  .lgd-sq{width:12px;height:3px;border-radius:1px;display:inline-block;}
+  .lgd-da{background:repeating-linear-gradient(90deg,currentColor 0 4px,transparent 4px 7px);height:2px;}
+  .cht{position:relative;height:340px;margin-bottom:8px;}
+  .ins{font-size:13px;color:var(--tx2);line-height:1.7;margin-top:18px;padding-top:14px;border-top:1px solid var(--bd2);}
+  .ins b{color:var(--tx);font-weight:500;}
+  .prio{display:flex;margin-top:28px;border-radius:10px;overflow:hidden;font-size:12px;font-weight:500;}
+  .prio div{padding:10px 14px;text-align:center;}
+  /* Resources */
+  .res{margin-top:52px;padding-top:28px;border-top:1px solid var(--bd2);}
+  .res h3{font-size:16px;font-weight:600;margin-bottom:14px;}
+  .res ul{list-style:none;padding:0;}
+  .res li{margin-bottom:10px;}
+  .res a{color:var(--roth);text-decoration:none;font-size:14px;font-weight:500;border-bottom:1px solid transparent;transition:border-color .2s;}
+  .res a:hover{border-bottom-color:var(--roth);}
+  .res .rdesc{font-size:12px;color:var(--tx3);margin-top:2px;}
+  .foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--bd2);font-size:12px;color:var(--tx3);line-height:1.6;}
+  .theme-toggle{position:fixed;top:16px;right:16px;width:36px;height:36px;border-radius:50%;border:1px solid var(--bd);background:var(--bg2);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s;z-index:100;padding:0;}
+  .theme-toggle:hover{background:var(--bg3);color:var(--tx);}
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">☀</button>
+<div class="c">
+<h1>The backdoor Roth IRA</h1>
+<p class="sub">A visual walkthrough for high-income earners who can't contribute directly to a Roth IRA — and what it means for long-term wealth.</p>
+<!-- ═══════════ PART 1 ═══════════ -->
+<div class="sec">Part 1 — How it works</div>
+<h2>The mechanism</h2>
+<div class="pills" id="pills"></div>
+<div id="panel"></div>
+<div class="hr"></div>
+<!-- ═══════════ PART 2 ═══════════ -->
+<div class="sec">Part 2 — The 30-year impact</div>
+<h2>What $7,000/year becomes</h2>
+<p style="font-size:14px;color:var(--tx2);margin-bottom:26px;line-height:1.7;max-width:620px;">Same after-tax dollars, three different vehicles. The 401(k) line shows what an equivalent pre-tax contribution would yield after retirement taxes — useful context, but the real decision is Roth vs. taxable, since you're already maxing your 401(k).</p>
+<div class="grid2">
+  <div><div class="ctrl-h"><span>Annual return</span><span class="ctrl-v" id="vr">7.0%</span></div><input type="range" min="4" max="12" step="0.5" value="7" id="sr"></div>
+  <div><div class="ctrl-h"><span>Years to retirement</span><span class="ctrl-v" id="vy">30</span></div><input type="range" min="10" max="40" step="1" value="30" id="sy"></div>
+  <div><div class="ctrl-h"><span>Current marginal tax rate</span><span class="ctrl-v" id="vc">41%</span></div><input type="range" min="25" max="55" step="1" value="41" id="sc"></div>
+  <div><div class="ctrl-h"><span>Retirement effective tax rate</span><span class="ctrl-v" id="vt">25%</span></div><input type="range" min="10" max="45" step="1" value="25" id="st"></div>
+</div>
+<div class="mets" id="mets"></div>
+<div class="lgd">
+  <span class="lgd-i"><span class="lgd-sq" style="background:var(--roth)"></span>Backdoor Roth IRA</span>
+  <span class="lgd-i"><span class="lgd-sq lgd-da" style="color:var(--k4)"></span>401(k) equivalent</span>
+  <span class="lgd-i"><span class="lgd-sq lgd-da" style="color:var(--tax)"></span>Taxable brokerage</span>
+</div>
+<div class="cht"><canvas id="ch"></canvas></div>
+<div class="ins" id="ins"></div>
+<div class="prio">
+  <div style="flex:3;background:var(--k4-bg);color:var(--k4);">1. Max 401(k) →</div>
+  <div style="flex:2;background:var(--roth-bg);color:var(--roth);">2. Backdoor Roth →</div>
+  <div style="flex:2;background:var(--tax-bg);color:var(--tax);">3. Taxable brokerage</div>
+</div>
+<p style="font-size:11px;color:var(--tx3);text-align:center;margin-top:8px;">Recommended savings priority order</p>
+<!-- ═══════════ RESOURCES ═══════════ -->
+<div class="res">
+  <h3>Further reading — White Coat Investor</h3>
+  <ul>
+    <li>
+      <a href="https://www.whitecoatinvestor.com/backdoor-roth-ira-tutorial/" target="_blank" rel="noopener">Backdoor Roth IRA tutorial — the complete guide ↗</a>
+      <div class="rdesc">The canonical reference. Covers the full 6-step process, Form 8606, and 3,500+ comments of edge cases.</div>
+    </li>
+    <li>
+      <a href="https://www.whitecoatinvestor.com/how-to-do-a-backdoor-roth-ira-at-fidelity/" target="_blank" rel="noopener">Step-by-step at Fidelity (with screenshots) ↗</a>
+      <div class="rdesc">Fidelity-specific walkthrough. Note the 5-business-day hold before "cash available to withdraw" appears.</div>
+    </li>
+    <li>
+      <a href="https://www.whitecoatinvestor.com/how-to-do-a-backdoor-roth-ira-with-vanguard/" target="_blank" rel="noopener">Step-by-step at Vanguard (with screenshots) ↗</a>
+      <div class="rdesc">Vanguard-specific walkthrough. Slightly different UI flow but same underlying process.</div>
+    </li>
+    <li>
+      <a href="https://www.whitecoatinvestor.com/how-to-do-a-backdoor-roth-ira-with-schwab/" target="_blank" rel="noopener">Step-by-step at Schwab (with screenshots) ↗</a>
+      <div class="rdesc">Schwab-specific. Look for "Move Money" in the nav — they redesigned the interface recently.</div>
+    </li>
+    <li>
+      <a href="https://www.whitecoatinvestor.com/17-ways-to-screw-up-a-backdoor-roth-ira/" target="_blank" rel="noopener">17 ways to screw up your backdoor Roth ↗</a>
+      <div class="rdesc">Read this before you start. Covers every common mistake — pro-rata violations, Form 8606 errors, timing issues.</div>
+    </li>
+    <li>
+      <a href="https://www.whitecoatinvestor.com/fix-backdoor-roth-ira-screw-ups/" target="_blank" rel="noopener">How to fix backdoor Roth screw-ups ↗</a>
+      <div class="rdesc">Already made a mistake? This covers recharacterizations, late 8606 filings, and pro-rata cleanup.</div>
+    </li>
+  </ul>
+</div>
+<div class="foot">
+  <b>Disclaimer:</b> This page is for educational purposes only and does not constitute financial, tax, or legal advice. Tax laws change. Consult a qualified tax professional or financial advisor before implementing any strategy. The projections use simplified assumptions and do not account for inflation, fee drag, or individual tax circumstances.
+</div>
+<footer style="margin-top:24px;padding-top:16px;border-top:1px solid var(--bd2);font-size:13px;">
+  <a href="index.html" style="color:var(--roth);text-decoration:none;">← Back to tools</a>
+</footer>
+</div><!-- .c -->
+<script>
+// ─── STEPPER ────────────────────────────────────────────
+var steps=[
+  {label:"The problem",html:
+    '<div class="flow">'+
+      '<div class="box"><div class="tag">Your income</div><div class="ttl"><span class="mono">$250K+</span> W-2</div><div class="det">High-income earner</div></div>'+
+      '<div class="arr">→</div>'+
+      '<div class="box off"><div class="tag">Direct Roth IRA</div><div class="ttl" style="text-decoration:line-through;opacity:.5">Contribute $7,000</div><div class="det"><span class="badge br">Income too high</span></div></div>'+
+    '</div>'+
+    '<div class="co">In 2025, direct Roth IRA contributions phase out above $150K (single) or $236K (married filing jointly). If you earn above these thresholds, the front door is closed.<br><br>But there is no income limit on <em>conversions</em> from a Traditional IRA to a Roth IRA. That\'s the backdoor — and it\'s explicitly legal. The IRS is aware of this strategy and has never moved to close it.</div>'
+  },
+  {label:"Step 1: Contribute",html:
+    '<div class="flow">'+
+      '<div class="box"><div class="tag">After-tax cash</div><div class="ttl"><span class="mono">$7,000</span></div><div class="det">Already taxed at your marginal rate</div></div>'+
+      '<div class="arr">→</div>'+
+      '<div class="box info"><div class="tag">Traditional IRA</div><div class="ttl"><span class="mono">$7,000</span> <span class="badge bw">Non-deductible</span></div><div class="det">File IRS Form 8606 to record your after-tax basis</div></div>'+
+    '</div>'+
+    '<div class="co">There is no income limit on Traditional IRA <em>contributions</em> — anyone can contribute. At high income levels, the contribution is <b>non-deductible</b> (no tax break now). That\'s fine — the point isn\'t the deduction. Filing Form 8606 establishes your cost basis so the IRS knows this money was already taxed. You can use the same Traditional IRA every year; it just sits at $0 most of the time.</div>'
+  },
+  {label:"Step 2: Convert",html:
+    '<div class="flow">'+
+      '<div class="box info"><div class="tag">Traditional IRA</div><div class="ttl"><span class="mono">$7,000</span> basis</div><div class="det">Non-deductible contribution</div></div>'+
+      '<div class="arr lbl"><span>convert</span><span style="font-size:16px">→</span></div>'+
+      '<div class="box hl"><div class="tag">Roth IRA</div><div class="ttl"><span class="mono">$7,000</span></div><div class="det"><span class="badge bg">$0 tax on conversion</span></div></div>'+
+    '</div>'+
+    '<div class="co">Convert the Traditional IRA to a Roth IRA — <b>ideally within days</b>, before any gains accrue. Since you already paid tax on the $7,000 (it was non-deductible) and there are no investment gains yet, the conversion triggers <b>zero additional tax</b>. This is the "backdoor."<br><br>Any growth between contribution and conversion <em>is</em> taxable, so convert promptly. If a few cents of interest accrues, that\'s normal and trivially small — don\'t stress about it.</div>'
+  },
+  {label:"Step 3: Grow tax-free",html:
+    '<div class="flow">'+
+      '<div class="box hl" style="min-width:90px;"><div class="tag">Year 1</div><div class="ttl"><span class="mono">$7K</span></div><div class="det">No tax on gains</div></div>'+
+      '<div class="arr">→</div>'+
+      '<div class="box hl" style="min-width:90px;"><div class="tag">Year 15</div><div class="ttl"><span class="mono">~$193K</span></div><div class="det">Contributions + growth</div></div>'+
+      '<div class="arr">→</div>'+
+      '<div class="box hl" style="min-width:90px;"><div class="tag">Year 30</div><div class="ttl"><span class="mono">~$661K</span></div><div class="det"><span class="badge bg">100% tax-free</span></div></div>'+
+    '</div>'+
+    '<div class="co">Repeat every year. At 7% annual return, thirty years of $7K contributions compound to roughly <b>$661K</b> — every dollar withdrawable tax-free after age 59½. No tax on dividends, no tax on rebalancing, no tax on withdrawal. No Required Minimum Distributions (unlike a Traditional IRA / 401k). And your heirs inherit Roth IRAs tax-free too, though they must distribute within 10 years.</div>'
+  },
+  {label:"Pro-rata gotcha",html:
+    '<div class="flow"><div class="box wr w2">'+
+      '<div class="tag" style="color:var(--warn)">⚠ Pro-rata rule</div>'+
+      '<div class="ttl">Do you have any pre-tax money in <em>any</em> Traditional, SEP, or SIMPLE IRA?</div>'+
+      '<div class="det" style="margin-top:8px;line-height:1.7;">The IRS treats <b>all</b> your IRAs as one pool. Your conversion becomes partially taxable — proportional to the pre-tax share across all IRAs. You cannot cherry-pick which dollars to convert.</div>'+
+    '</div></div>'+
+    '<div class="co dg"><b>Example:</b> You have $93K pre-tax in a rollover IRA and contribute $7K non-deductible. Total IRA balance = $100K, of which 93% is pre-tax. Converting $7K means $6,510 is taxable — defeating the purpose.<br><br><b>The fix:</b> Roll all pre-tax IRA money into your employer\'s 401(k) before doing the backdoor conversion (most plans accept incoming rollovers — call your plan administrator to confirm). This zeros out the pre-tax IRA balance and makes your conversion clean.<br><br><b>Also note:</b> 401(k) balances are <em>not</em> included in the pro-rata calculation — only IRAs. So having a large 401(k) doesn\'t cause problems.</div>'
+  }
+];
+var pillsEl=document.getElementById('pills'),panelEl=document.getElementById('panel');
+steps.forEach(function(s,i){
+  var p=document.createElement('button');
+  p.className='pill'+(i===0?' on':'');
+  p.textContent=s.label;
+  p.onclick=function(){show(i)};
+  pillsEl.appendChild(p);
+});
+function show(i){
+  [].forEach.call(pillsEl.children,function(p,j){p.className='pill'+(j===i?' on':'')});
+  panelEl.innerHTML=steps[i].html;
+}
+show(0);
+// ─── PROJECTION ─────────────────────────────────────────
+var C=7000,DY=.02,DT=.243,LT=.243;
+function isDark(){
+  var t=document.documentElement.getAttribute('data-theme');
+  if(t==='dark') return true;
+  if(t==='light') return false;
+  return matchMedia('(prefers-color-scheme:dark)').matches;
+}
+function themeColors(){
+  var dk=isDark();
+  return {
+    gc:dk?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)',
+    tc:dk?'#9c9a92':'#9c9a92',
+    rc:dk?'#3DC99A':'#0E7C5F',
+    kc:dk?'#6AACEF':'#2B6DB5',
+    xc:dk?'#9C9B96':'#888780',
+    dk:dk
+  };
+}
+var dk=isDark();
+var gc,tc,rc,kc,xc;
+function applyThemeColors(){
+  var c=themeColors();
+  dk=c.dk;gc=c.gc;tc=c.tc;rc=c.rc;kc=c.kc;xc=c.xc;
+}
+applyThemeColors();
+// Theme toggle
+var toggleBtn=document.getElementById('themeToggle');
+function updateToggleIcon(){toggleBtn.textContent=isDark()?'☀':'☾';}
+updateToggleIcon();
+toggleBtn.addEventListener('click',function(){
+  var cur=isDark();
+  document.documentElement.setAttribute('data-theme',cur?'light':'dark');
+  applyThemeColors();
+  updateToggleIcon();
+  updateChartTheme();
+  up();
+});
+var chart=new Chart(document.getElementById('ch'),{
+  type:'line',
+  data:{labels:[],datasets:[
+    {label:'Roth',data:[],borderColor:rc,backgroundColor:dk?'rgba(61,201,154,.08)':'rgba(14,124,95,.06)',fill:true,borderWidth:2.5,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:rc,tension:.25},
+    {label:'401(k)',data:[],borderColor:kc,backgroundColor:dk?'rgba(106,172,239,.05)':'rgba(43,109,181,.04)',fill:true,borderWidth:2,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:kc,borderDash:[6,3],tension:.25},
+    {label:'Taxable',data:[],borderColor:xc,backgroundColor:dk?'rgba(156,155,150,.05)':'rgba(136,135,128,.04)',fill:true,borderWidth:1.5,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:xc,borderDash:[3,3],tension:.25}
+  ]},
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:dk?'#333':'#fff',titleColor:dk?'#e8e7e3':'#1a1a18',
+      bodyColor:dk?'#9c9b96':'#6b6a65',borderColor:dk?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)',
+      borderWidth:1,padding:10,cornerRadius:8,
+      titleFont:{family:"'DM Sans'",weight:'500',size:13},
+      bodyFont:{family:"'JetBrains Mono'",size:12},
+      callbacks:{label:function(c){return ' '+c.dataset.label+': '+fm(c.parsed.y)}}
+    }},
+    scales:{
+      x:{grid:{display:false},border:{display:false},ticks:{color:tc,font:{size:11},maxTicksLimit:8}},
+      y:{grid:{color:gc},border:{display:false},ticks:{color:tc,font:{size:11},callback:function(v){return v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}}}
+    }
+  }
+});
+function updateChartTheme(){
+  var c=themeColors();
+  chart.data.datasets[0].borderColor=c.rc;
+  chart.data.datasets[0].backgroundColor=c.dk?'rgba(61,201,154,.08)':'rgba(14,124,95,.06)';
+  chart.data.datasets[0].pointHoverBackgroundColor=c.rc;
+  chart.data.datasets[1].borderColor=c.kc;
+  chart.data.datasets[1].backgroundColor=c.dk?'rgba(106,172,239,.05)':'rgba(43,109,181,.04)';
+  chart.data.datasets[1].pointHoverBackgroundColor=c.kc;
+  chart.data.datasets[2].borderColor=c.xc;
+  chart.data.datasets[2].backgroundColor=c.dk?'rgba(156,155,150,.05)':'rgba(136,135,128,.04)';
+  chart.data.datasets[2].pointHoverBackgroundColor=c.xc;
+  chart.options.scales.x.ticks.color=c.tc;
+  chart.options.scales.y.ticks.color=c.tc;
+  chart.options.scales.y.grid.color=c.gc;
+  chart.options.plugins.tooltip.backgroundColor=c.dk?'#333':'#fff';
+  chart.options.plugins.tooltip.titleColor=c.dk?'#e8e7e3':'#1a1a18';
+  chart.options.plugins.tooltip.bodyColor=c.dk?'#9c9b96':'#6b6a65';
+  chart.options.plugins.tooltip.borderColor=c.dk?'rgba(255,255,255,.1)':'rgba(0,0,0,.08)';
+  chart.update('none');
+}
+function fm(v){return v>=1e6?'$'+(v/1e6).toFixed(2)+'M':'$'+Math.round(v).toLocaleString()}
+function up(){
+  var r=+document.getElementById('sr').value/100;
+  var n=+document.getElementById('sy').value;
+  var tC=+document.getElementById('sc').value/100;
+  var tR=+document.getElementById('st').value/100;
+  document.getElementById('vr').textContent=(r*100).toFixed(1)+'%';
+  document.getElementById('vy').textContent=n;
+  document.getElementById('vc').textContent=Math.round(tC*100)+'%';
+  document.getElementById('vt').textContent=Math.round(tR*100)+'%';
+  var er=r-(DY*DT),k4c=C/(1-tC);
+  var lb=[],rd=[],kd=[],td=[];
+  var rB=0,kB=0,tB=0,ba=0;
+  for(var y=0;y<=n;y++){
+    lb.push(y===0?'Now':'Yr '+y);
+    if(y>0){rB=(rB+C)*(1+r);kB=(kB+k4c)*(1+r);tB=(tB+C)*(1+er);ba+=C;}
+    rd.push(Math.round(rB));
+    kd.push(Math.round(kB*(1-tR)));
+    var g=Math.max(0,tB-ba);
+    td.push(Math.round(ba+g*(1-LT)));
+  }
+  chart.data.labels=lb;
+  chart.data.datasets[0].data=rd;
+  chart.data.datasets[1].data=kd;
+  chart.data.datasets[2].data=td;
+  chart.update('none');
+  var rF=rd[n],kF=kd[n],tF=td[n];
+  var adv=rF-tF,ap=Math.round(adv/tF*100);
+  document.getElementById('mets').innerHTML=
+    '<div class="met"><div class="met-l"><span class="met-d" style="background:'+rc+'"></span>Backdoor Roth</div><div class="met-v" style="color:'+rc+'">'+fm(rF)+'</div><div class="met-s">100% tax-free withdrawal</div></div>'+
+    '<div class="met"><div class="met-l"><span class="met-d" style="background:'+kc+'"></span>401(k) equivalent</div><div class="met-v" style="color:'+kc+'">'+fm(kF)+'</div><div class="met-s">After '+Math.round(tR*100)+'% retirement tax</div></div>'+
+    '<div class="met"><div class="met-l"><span class="met-d" style="background:'+xc+'"></span>Taxable brokerage</div><div class="met-v" style="color:'+xc+'">'+fm(tF)+'</div><div class="met-s">After cap gains + annual drag</div></div>';
+  var kD=Math.abs(kF-rF);
+  var txt='<b>Roth vs. taxable:</b> The backdoor Roth delivers '+fm(adv)+' more (+'+ap+'%) over '+n+' years — entirely from eliminating annual dividend tax drag (~2.4%/yr on yield) and capital gains tax at withdrawal. ';
+  if(tC>tR) txt+='<b>Roth vs. 401(k):</b> The 401(k) equivalent shows '+fm(kD)+' more because your current marginal rate ('+Math.round(tC*100)+'%) exceeds your projected retirement rate ('+Math.round(tR*100)+'%), making pre-tax deferral mathematically favorable. But you\'re already maxing your 401(k) — the backdoor Roth is <em>additional</em> tax-advantaged space on top of it. Try dragging the retirement tax slider up to 35-40% and watch the Roth overtake the 401(k) — that\'s the scenario where you stay in a high-tax state or tax rates rise legislatively.';
+  else if(tC<tR) txt+='<b>Roth vs. 401(k):</b> The Roth outperforms by '+fm(kD)+' because your retirement rate ('+Math.round(tR*100)+'%) exceeds your current rate ('+Math.round(tC*100)+'%), making tax-free growth more valuable than pre-tax deferral.';
+  else txt+='<b>Roth vs. 401(k):</b> At equal tax rates they\'re mathematically identical, but the Roth has no Required Minimum Distributions and more withdrawal flexibility.';
+  document.getElementById('ins').innerHTML=txt;
+}
+['sr','sy','sc','st'].forEach(function(id){document.getElementById(id).addEventListener('input',up)});
+up();
+</script>
+</body>
+</html>
