@@ -707,7 +707,7 @@ function render(){
   // Add next rung button (unless last step)
   if(currentStep<steps.length-1){
     var next=steps[currentStep+1];
-    html+='<div class="next-rung" onclick="currentStep='+(currentStep+1)+';render();window.scrollTo({top:0,behavior:\'smooth\'})">'+
+    html+='<div class="next-rung" onclick="currentStep='+(currentStep+1)+';render();document.getElementById(\'panel\').scrollIntoView({behavior:\'smooth\'})">'+
       '<span class="next-rung-label">Next:</span> <span class="next-rung-title">'+next.label+'</span>'+
       '<span class="next-rung-arrow">→</span></div>';
   }
