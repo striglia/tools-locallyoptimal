@@ -4,17 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baby Food Tracker - Locally Optimal Tools</title>
+    <script>(function(){var t=localStorage.getItem('lo-theme');if(t)document.documentElement.setAttribute('data-theme',t)})()</script>
     <style>
+        :root {
+            --bg: #ffffff;
+            --bg2: #f6f8fa;
+            --bg3: #e1e4e8;
+            --tx: #333;
+            --tx2: #586069;
+            --tx3: #6a737d;
+            --bd: #d1d5da;
+            --bd2: #eee;
+            --accent: #0366d6;
+            --accent-hover: #0256c7;
+            --danger: #d73a49;
+            --danger-bg: #ffeef0;
+            --success: #28a745;
+            --other-month: #fafbfc;
+            --has-entries: #f0fff4;
+            --guidelines-bg: #fff8e1;
+            --guidelines-bd: #ffe082;
+            --guidelines-tx: #f57c00;
+            --cat-allergen-bg: #fff5f5; --cat-allergen-tx: #c53030;
+            --cat-iron-bg: #fef3cd; --cat-iron-tx: #856404;
+            --cat-fruit-bg: #d4edda; --cat-fruit-tx: #155724;
+            --cat-veg-bg: #d1ecf1; --cat-veg-tx: #0c5460;
+            --cat-protein-bg: #f8d7da; --cat-protein-tx: #721c24;
+            --cat-grain-bg: #fff3cd; --cat-grain-tx: #856404;
+            --cat-dairy-bg: #e2e3e5; --cat-dairy-tx: #383d41;
+        }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --success: #3fb950;
+            --other-month: #161b22;
+            --has-entries: #0d2117;
+            --guidelines-bg: #2a2000;
+            --guidelines-bd: #9e6a03;
+            --guidelines-tx: #d29922;
+            --cat-allergen-bg: #3d1117; --cat-allergen-tx: #f85149;
+            --cat-iron-bg: #2a2000; --cat-iron-tx: #d29922;
+            --cat-fruit-bg: #0d2117; --cat-fruit-tx: #3fb950;
+            --cat-veg-bg: #0c2d3a; --cat-veg-tx: #56d4ef;
+            --cat-protein-bg: #3d1117; --cat-protein-tx: #f85149;
+            --cat-grain-bg: #2a2000; --cat-grain-tx: #d29922;
+            --cat-dairy-bg: #21262d; --cat-dairy-tx: #8b949e;
+        }}
+        :root[data-theme="dark"] {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --success: #3fb950;
+            --other-month: #161b22;
+            --has-entries: #0d2117;
+            --guidelines-bg: #2a2000;
+            --guidelines-bd: #9e6a03;
+            --guidelines-tx: #d29922;
+            --cat-allergen-bg: #3d1117; --cat-allergen-tx: #f85149;
+            --cat-iron-bg: #2a2000; --cat-iron-tx: #d29922;
+            --cat-fruit-bg: #0d2117; --cat-fruit-tx: #3fb950;
+            --cat-veg-bg: #0c2d3a; --cat-veg-tx: #56d4ef;
+            --cat-protein-bg: #3d1117; --cat-protein-tx: #f85149;
+            --cat-grain-bg: #2a2000; --cat-grain-tx: #d29922;
+            --cat-dairy-bg: #21262d; --cat-dairy-tx: #8b949e;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--bd);
+            background: var(--bg2);
+            color: var(--tx2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+            z-index: 100;
+            padding: 0;
+        }
+        .theme-toggle:hover {
+            background: var(--bg3);
+            color: var(--tx);
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             line-height: 1.6;
-            color: #333;
+            color: var(--tx);
+            background: var(--bg);
         }
         h1 {
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--bd2);
             padding-bottom: 10px;
         }
         h2 {
@@ -22,7 +128,7 @@
             font-size: 1.3em;
         }
         .intro {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 15px 20px;
             border-radius: 6px;
             margin-bottom: 25px;
@@ -32,7 +138,7 @@
             margin: 8px 0;
         }
         .intro a {
-            color: #0366d6;
+            color: var(--accent);
         }
 
         /* Tabs */
@@ -40,7 +146,7 @@
             display: flex;
             gap: 0;
             margin-bottom: 20px;
-            border-bottom: 1px solid #e1e4e8;
+            border-bottom: 1px solid var(--bd);
         }
         .tab {
             padding: 10px 20px;
@@ -48,16 +154,16 @@
             border: none;
             background: none;
             font-size: 14px;
-            color: #586069;
+            color: var(--tx2);
             border-bottom: 2px solid transparent;
             margin-bottom: -1px;
         }
         .tab:hover {
-            color: #24292e;
+            color: var(--tx);
         }
         .tab.active {
-            color: #0366d6;
-            border-bottom-color: #0366d6;
+            color: var(--accent);
+            border-bottom-color: var(--accent);
             font-weight: 500;
         }
         .tab-content {
@@ -80,15 +186,15 @@
             align-items: center;
         }
         .calendar-nav button {
-            background: #f6f8fa;
-            border: 1px solid #e1e4e8;
+            background: var(--bg2);
+            border: 1px solid var(--bd);
             padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
         }
         .calendar-nav button:hover {
-            background: #e1e4e8;
+            background: var(--bg3);
         }
         .calendar-month {
             font-size: 1.2em;
@@ -103,32 +209,32 @@
             text-align: center;
             font-size: 0.85em;
             font-weight: 600;
-            color: #586069;
+            color: var(--tx2);
             padding: 8px 0;
         }
         .calendar-day {
             min-height: 80px;
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
             border-radius: 4px;
             padding: 4px;
             font-size: 0.85em;
-            background: #fff;
+            background: var(--bg);
             cursor: pointer;
             position: relative;
         }
         .calendar-day:hover {
-            background: #f6f8fa;
+            background: var(--bg2);
         }
         .calendar-day.other-month {
-            background: #fafbfc;
-            color: #959da5;
+            background: var(--other-month);
+            color: var(--tx3);
         }
         .calendar-day.today {
-            border-color: #0366d6;
+            border-color: var(--accent);
             border-width: 2px;
         }
         .calendar-day.has-entries {
-            background: #f0fff4;
+            background: var(--has-entries);
         }
         .calendar-day-number {
             font-weight: 500;
@@ -136,11 +242,11 @@
         }
         .calendar-day-foods {
             font-size: 0.8em;
-            color: #24292e;
+            color: var(--tx);
         }
         .calendar-day-food {
             display: inline-block;
-            background: #e1e4e8;
+            background: var(--bg3);
             padding: 1px 5px;
             border-radius: 3px;
             margin: 1px;
@@ -150,17 +256,17 @@
             max-width: 100%;
         }
         .calendar-day-food.allergen {
-            background: #fff5f5;
-            color: #c53030;
+            background: var(--cat-allergen-bg);
+            color: var(--cat-allergen-tx);
         }
         .calendar-day-more {
             font-size: 0.75em;
-            color: #586069;
+            color: var(--tx2);
         }
 
         /* Entry Form */
         .entry-form {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 20px;
             border-radius: 6px;
             margin-bottom: 20px;
@@ -190,7 +296,7 @@
             width: 100%;
             padding: 8px 12px;
             font-size: 14px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
             border-radius: 4px;
             box-sizing: border-box;
             font-family: inherit;
@@ -203,10 +309,10 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #0366d6;
+            border-color: var(--accent);
         }
         .form-group small {
-            color: #6a737d;
+            color: var(--tx3);
             font-size: 0.85em;
             display: block;
             margin-top: 4px;
@@ -220,19 +326,19 @@
             max-width: 200px;
             max-height: 150px;
             border-radius: 4px;
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
         }
         .photo-remove {
             display: inline-block;
             margin-left: 10px;
-            color: #d73a49;
+            color: var(--danger);
             cursor: pointer;
             font-size: 0.9em;
         }
 
         /* Buttons */
         button.primary {
-            background: #0366d6;
+            background: var(--accent);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -242,22 +348,22 @@
             font-weight: 500;
         }
         button.primary:hover {
-            background: #0256c7;
+            background: var(--accent-hover);
         }
         button.secondary {
-            background: #fafbfc;
-            color: #24292e;
-            border: 1px solid #e1e4e8;
+            background: var(--bg2);
+            color: var(--tx);
+            border: 1px solid var(--bd);
             padding: 10px 20px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
         }
         button.secondary:hover {
-            background: #f3f4f6;
+            background: var(--bg3);
         }
         button.danger {
-            background: #d73a49;
+            background: var(--danger);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -266,7 +372,7 @@
             font-size: 14px;
         }
         button.danger:hover {
-            background: #c53030;
+            background: var(--danger);
         }
         .button-row {
             display: flex;
@@ -282,18 +388,18 @@
             display: flex;
             align-items: flex-start;
             padding: 15px;
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
             border-radius: 6px;
             margin-bottom: 10px;
-            background: #fff;
+            background: var(--bg);
         }
         .suggestion-card:hover {
-            background: #f6f8fa;
+            background: var(--bg2);
         }
         .suggestion-rank {
             font-size: 1.5em;
             font-weight: bold;
-            color: #0366d6;
+            color: var(--accent);
             margin-right: 15px;
             min-width: 30px;
         }
@@ -307,7 +413,7 @@
         }
         .suggestion-reason {
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
         }
         .suggestion-category {
             display: inline-block;
@@ -317,37 +423,37 @@
             margin-top: 5px;
         }
         .category-allergen {
-            background: #fff5f5;
-            color: #c53030;
+            background: var(--cat-allergen-bg);
+            color: var(--cat-allergen-tx);
         }
         .category-iron {
-            background: #fef3cd;
-            color: #856404;
+            background: var(--cat-iron-bg);
+            color: var(--cat-iron-tx);
         }
         .category-fruit {
-            background: #d4edda;
-            color: #155724;
+            background: var(--cat-fruit-bg);
+            color: var(--cat-fruit-tx);
         }
         .category-vegetable {
-            background: #d1ecf1;
-            color: #0c5460;
+            background: var(--cat-veg-bg);
+            color: var(--cat-veg-tx);
         }
         .category-protein {
-            background: #f8d7da;
-            color: #721c24;
+            background: var(--cat-protein-bg);
+            color: var(--cat-protein-tx);
         }
         .category-grain {
-            background: #fff3cd;
-            color: #856404;
+            background: var(--cat-grain-bg);
+            color: var(--cat-grain-tx);
         }
         .category-dairy {
-            background: #e2e3e5;
-            color: #383d41;
+            background: var(--cat-dairy-bg);
+            color: var(--cat-dairy-tx);
         }
         .add-suggestion-btn {
             background: none;
             border: 1px solid #0366d6;
-            color: #0366d6;
+            color: var(--accent);
             padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
@@ -355,7 +461,7 @@
             margin-top: 8px;
         }
         .add-suggestion-btn:hover {
-            background: #0366d6;
+            background: var(--accent);
             color: white;
         }
 
@@ -365,31 +471,31 @@
         }
         .history-item {
             padding: 15px;
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
             border-radius: 6px;
             margin-bottom: 10px;
-            background: #fff;
+            background: var(--bg);
         }
         .history-date {
             font-weight: 600;
-            color: #24292e;
+            color: var(--tx);
             margin-bottom: 8px;
         }
         .history-food {
             display: inline-block;
             padding: 4px 10px;
-            background: #f6f8fa;
+            background: var(--bg2);
             border-radius: 4px;
             margin-right: 8px;
             margin-bottom: 5px;
         }
         .history-food.allergen {
-            background: #fff5f5;
-            color: #c53030;
+            background: var(--cat-allergen-bg);
+            color: var(--cat-allergen-tx);
         }
         .history-notes {
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
             margin-top: 8px;
             font-style: italic;
         }
@@ -406,7 +512,7 @@
             margin-top: 10px;
         }
         .history-delete {
-            color: #d73a49;
+            color: var(--danger);
             cursor: pointer;
             font-size: 0.85em;
             background: none;
@@ -434,7 +540,7 @@
             display: flex;
         }
         .modal {
-            background: white;
+            background: var(--bg);
             padding: 25px;
             border-radius: 8px;
             max-width: 500px;
@@ -466,7 +572,7 @@
             margin-bottom: 25px;
         }
         .stat-card {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 15px;
             border-radius: 6px;
             text-align: center;
@@ -474,17 +580,17 @@
         .stat-value {
             font-size: 2em;
             font-weight: bold;
-            color: #24292e;
+            color: var(--tx);
         }
         .stat-label {
             font-size: 0.85em;
-            color: #586069;
+            color: var(--tx2);
         }
 
         /* Guidelines */
         .guidelines {
-            background: #fff8e1;
-            border: 1px solid #ffe082;
+            background: var(--guidelines-bg);
+            border: 1px solid var(--guidelines-bd);
             padding: 15px 20px;
             border-radius: 6px;
             margin-bottom: 20px;
@@ -492,7 +598,7 @@
         }
         .guidelines h4 {
             margin: 0 0 10px 0;
-            color: #f57c00;
+            color: var(--guidelines-tx);
         }
         .guidelines ul {
             margin: 0;
@@ -504,8 +610,8 @@
 
         /* Error messages */
         .form-error {
-            color: #d73a49;
-            background: #ffeef0;
+            color: var(--danger);
+            background: var(--danger-bg);
             padding: 10px;
             border-radius: 4px;
             margin-bottom: 15px;
@@ -516,18 +622,27 @@
         .data-section {
             margin-top: 30px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--bd2);
         }
 
         footer {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--bd2);
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
         }
         footer a {
-            color: #0366d6;
+            color: var(--accent);
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: var(--bg);
+            color: var(--tx);
+        }
+        .calendar-nav button {
+            color: var(--tx);
         }
 
         @media (max-width: 600px) {
@@ -550,7 +665,7 @@
                 display: block;
                 width: 6px;
                 height: 6px;
-                background: #28a745;
+                background: var(--success);
                 border-radius: 50%;
                 margin: 2px auto;
             }
@@ -571,6 +686,7 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"></button>
     <h1>Baby Food Tracker</h1>
 
     <div class="intro">
@@ -950,7 +1066,7 @@
                         `;
                     } catch (err) {
                         console.error('Photo compression failed:', err);
-                        document.getElementById('photoPreview').innerHTML = '<em style="color: #d73a49;">Failed to process photo</em>';
+                        document.getElementById('photoPreview').innerHTML = '<em style="color: var(--danger);">Failed to process photo</em>';
                     }
                 }
             });
@@ -1455,6 +1571,25 @@
             div.textContent = text;
             return div.innerHTML;
         }
+    </script>
+    <script>
+    (function(){
+        function isDark(){
+            var t=document.documentElement.getAttribute('data-theme');
+            if(t==='dark') return true;
+            if(t==='light') return false;
+            return matchMedia('(prefers-color-scheme:dark)').matches;
+        }
+        var btn=document.getElementById('themeToggle');
+        function updateIcon(){btn.textContent=isDark()?'\u2600':'\u263E';}
+        updateIcon();
+        btn.addEventListener('click',function(){
+            var next=isDark()?'light':'dark';
+            document.documentElement.setAttribute('data-theme',next);
+            localStorage.setItem('lo-theme',next);
+            updateIcon();
+        });
+    })();
     </script>
 </body>
 </html>

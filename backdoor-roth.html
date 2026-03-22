@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Backdoor Roth IRA — A Visual Guide for High-Income Earners</title>
+<script>(function(){var t=localStorage.getItem('lo-theme');if(t)document.documentElement.setAttribute('data-theme',t)})()</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -275,7 +276,9 @@ function updateToggleIcon(){toggleBtn.textContent=isDark()?'☀':'☾';}
 updateToggleIcon();
 toggleBtn.addEventListener('click',function(){
   var cur=isDark();
-  document.documentElement.setAttribute('data-theme',cur?'light':'dark');
+  var next=cur?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('lo-theme',next);
   applyThemeColors();
   updateToggleIcon();
   updateChartTheme();

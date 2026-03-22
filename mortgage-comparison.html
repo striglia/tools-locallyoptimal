@@ -5,17 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mortgage Comparison Calculator - Locally Optimal Tools</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+    <script>(function(){var t=localStorage.getItem('lo-theme');if(t)document.documentElement.setAttribute('data-theme',t)})()</script>
     <style>
+        :root {
+            --bg: #ffffff;
+            --bg2: #f6f8fa;
+            --bg3: #e1e4e8;
+            --tx: #333;
+            --tx2: #586069;
+            --tx3: #6a737d;
+            --bd: #d1d5da;
+            --bd2: #eee;
+            --accent: #0366d6;
+            --accent-hover: #0256c7;
+            --danger: #d73a49;
+            --danger-bg: #ffeef0;
+            --success: #276749;
+            --success-bg: #f0fff4;
+            --success-bd: #9ae6b4;
+            --muted: #959da5;
+            --row-bd: #f0f0f0;
+        }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --success: #3fb950;
+            --success-bg: #0d2117;
+            --success-bd: #1a4731;
+            --muted: #6e7681;
+            --row-bd: #21262d;
+        }}
+        :root[data-theme="dark"] {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --success: #3fb950;
+            --success-bg: #0d2117;
+            --success-bd: #1a4731;
+            --muted: #6e7681;
+            --row-bd: #21262d;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--bd);
+            background: var(--bg2);
+            color: var(--tx2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+            z-index: 100;
+            padding: 0;
+        }
+        .theme-toggle:hover {
+            background: var(--bg3);
+            color: var(--tx);
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             line-height: 1.6;
-            color: #333;
+            color: var(--tx);
+            background: var(--bg);
         }
         h1 {
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--bd2);
             padding-bottom: 10px;
         }
         h2 {
@@ -23,12 +105,12 @@
             font-size: 1.3em;
         }
         .intro {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 15px 20px;
             border-radius: 6px;
             margin-bottom: 25px;
             font-size: 0.95em;
-            color: #24292e;
+            color: var(--tx);
         }
         .intro p {
             margin: 8px 0;
@@ -40,24 +122,24 @@
             border-radius: 6px;
             overflow: hidden;
             margin: 0 0 25px;
-            border: 1px solid #d1d5da;
+            border: 1px solid var(--bd);
         }
         .mode-toggle button {
             padding: 8px 24px;
             border: none;
-            background: #fff;
+            background: var(--bg2);
             cursor: pointer;
             font-size: 0.95em;
             font-weight: 500;
-            color: #586069;
+            color: var(--tx2);
             transition: background 0.15s, color 0.15s;
         }
         .mode-toggle button.active {
-            background: #0366d6;
+            background: var(--accent);
             color: #fff;
         }
         .mode-toggle button:hover:not(.active) {
-            background: #f6f8fa;
+            background: var(--bg3);
         }
         .mode-toggle button:first-child {
             border-right: 1px solid #d1d5da;
@@ -81,23 +163,25 @@
             display: block;
             font-weight: 500;
             margin-bottom: 5px;
-            color: #24292e;
+            color: var(--tx);
             font-size: 0.95em;
         }
         .input-group input, .input-group select {
             width: 100%;
             padding: 8px 12px;
             font-size: 14px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
+            background: var(--bg);
+            color: var(--tx);
             border-radius: 4px;
             box-sizing: border-box;
         }
         .input-group input:focus, .input-group select:focus {
             outline: none;
-            border-color: #0366d6;
+            border-color: var(--accent);
         }
         .input-group small {
-            color: #6a737d;
+            color: var(--tx3);
             font-size: 0.85em;
             display: block;
             margin-top: 4px;
@@ -113,7 +197,7 @@
 
         /* Scenario card */
         .scenario-card {
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
             border-radius: 6px;
             padding: 20px;
             position: relative;
@@ -140,14 +224,14 @@
             border: none;
             font-size: 1.3em;
             cursor: pointer;
-            color: #959da5;
+            color: var(--muted);
             padding: 2px 6px;
             border-radius: 3px;
             line-height: 1;
         }
         .scenario-remove-btn:hover {
-            background: #ffeef0;
-            color: #d73a49;
+            background: var(--danger-bg);
+            color: var(--danger);
         }
         .scenario-card .input-group {
             min-width: unset;
@@ -161,7 +245,7 @@
         .card-ocr-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(255, 255, 255, 0.88);
+            background: rgba(13, 17, 23, 0.88);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -174,7 +258,7 @@
             width: 32px;
             height: 32px;
             border: 3px solid #e1e4e8;
-            border-top-color: #0366d6;
+            border-top-color: var(--accent);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -183,7 +267,7 @@
         }
         .card-ocr-overlay .ocr-status-text {
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
             text-align: center;
         }
 
@@ -198,29 +282,29 @@
             font-size: 0.75em;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #959da5;
+            color: var(--muted);
             margin-bottom: 6px;
         }
         .card-comparison .comparison-row {
             display: flex;
             justify-content: space-between;
             padding: 3px 0;
-            color: #586069;
+            color: var(--tx2);
         }
         .card-comparison .comparison-value {
             font-weight: 600;
         }
         .card-comparison .comparison-value.positive {
-            color: #276749;
+            color: var(--success);
         }
         .card-comparison .comparison-value.negative {
-            color: #d73a49;
+            color: var(--danger);
         }
 
         /* Upload status */
         .upload-status {
             font-size: 0.85em;
-            color: #586069;
+            color: var(--tx2);
             width: 100%;
             text-align: center;
             min-height: 1.2em;
@@ -245,8 +329,8 @@
             background: #e1e4e8 !important;
         }
         .add-scenario-btn {
-            background: #f6f8fa;
-            color: #0366d6;
+            background: var(--bg2);
+            color: var(--accent);
             border: 1px dashed #c8e1ff;
             padding: 10px 20px;
             border-radius: 6px;
@@ -255,10 +339,10 @@
             font-weight: 500;
         }
         .add-scenario-btn:hover:not(:disabled) {
-            background: #e1e4e8;
+            background: var(--bg3);
         }
         .add-scenario-btn:disabled {
-            color: #959da5;
+            color: var(--muted);
             border-color: #e1e4e8;
             cursor: not-allowed;
         }
@@ -271,31 +355,31 @@
             margin: 20px 0;
         }
         .summary-card {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 15px 20px;
             border-radius: 6px;
             text-align: center;
         }
         .summary-card.winner {
-            background: #f0fff4;
-            border: 1px solid #9ae6b4;
+            background: var(--success-bg);
+            border: 1px solid var(--success-bd);
         }
         .summary-label {
             font-size: 0.85em;
-            color: #586069;
+            color: var(--tx2);
             margin-bottom: 5px;
         }
         .summary-value {
             font-size: 1.8em;
             font-weight: bold;
-            color: #24292e;
+            color: var(--tx);
         }
         .summary-card.winner .summary-value {
-            color: #276749;
+            color: var(--success);
         }
         .summary-sublabel {
             font-size: 0.8em;
-            color: #6a737d;
+            color: var(--tx3);
             margin-top: 3px;
         }
 
@@ -307,7 +391,7 @@
             margin: 20px 0;
         }
         .breakdown-card {
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
             border-radius: 6px;
             overflow: hidden;
         }
@@ -321,29 +405,29 @@
             justify-content: space-between;
             padding: 8px 15px;
             font-size: 0.9em;
-            border-top: 1px solid #f0f0f0;
+            border-top: 1px solid var(--row-bd);
         }
         .breakdown-row.total {
             font-weight: 600;
-            background: #f6f8fa;
-            border-top: 2px solid #e1e4e8;
+            background: var(--bg2);
+            border-top: 2px solid var(--bd);
         }
         .breakdown-row .label {
-            color: #586069;
+            color: var(--tx2);
         }
         .breakdown-row .value {
             font-weight: 500;
         }
         .pmi-note {
             font-size: 0.8em;
-            color: #d73a49;
+            color: var(--danger);
         }
 
         /* Break-even */
         .break-even-section {
             margin: 25px 0;
             padding: 20px;
-            background: #f6f8fa;
+            background: var(--bg2);
             border-radius: 6px;
         }
         .break-even-section h3 {
@@ -356,10 +440,10 @@
             gap: 15px;
         }
         .break-even-card {
-            background: #fff;
+            background: var(--bg);
             padding: 15px;
             border-radius: 6px;
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
         }
         .break-even-months {
             font-size: 1.5em;
@@ -367,14 +451,14 @@
         }
         .break-even-detail {
             font-size: 0.85em;
-            color: #586069;
+            color: var(--tx2);
             margin-top: 4px;
         }
 
         /* Charts */
         .chart-container {
-            background: #fff;
-            border: 1px solid #e1e4e8;
+            background: var(--bg);
+            border: 1px solid var(--bd);
             border-radius: 6px;
             padding: 20px;
             margin: 20px 0;
@@ -388,7 +472,7 @@
         .chart-tooltip {
             display: none;
             position: absolute;
-            background: #24292e;
+            background: var(--tx);
             color: #fff;
             padding: 8px 12px;
             border-radius: 6px;
@@ -420,18 +504,18 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            background: #f6f8fa;
-            border: 1px solid #d1d5da;
+            background: var(--bg2);
+            border: 1px solid var(--bd);
             border-radius: 4px;
             padding: 4px 10px;
             font-size: 0.8em;
             cursor: pointer;
-            color: #0366d6;
+            color: var(--accent);
             z-index: 10;
             display: none;
         }
         .chart-reset-zoom:hover {
-            background: #e1e4e8;
+            background: var(--bg3);
         }
         .legend {
             display: flex;
@@ -458,16 +542,16 @@
             margin: 15px 0;
         }
         .amort-toggle button {
-            background: #f6f8fa;
-            color: #0366d6;
-            border: 1px solid #e1e4e8;
+            background: var(--bg2);
+            color: var(--accent);
+            border: 1px solid var(--bd);
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.9em;
         }
         .amort-toggle button:hover {
-            background: #e1e4e8;
+            background: var(--bg3);
         }
         .amort-table-wrapper {
             display: none;
@@ -475,7 +559,7 @@
             max-height: 400px;
             overflow-y: auto;
             overflow-x: auto;
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
             border-radius: 6px;
         }
         .amort-table {
@@ -487,16 +571,16 @@
         .amort-table th {
             position: sticky;
             top: 0;
-            background: #f6f8fa;
+            background: var(--bg2);
             font-weight: 600;
-            color: #24292e;
+            color: var(--tx);
             font-size: 0.9em;
             z-index: 1;
         }
         .amort-table th, .amort-table td {
             padding: 8px 10px;
             text-align: right;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid var(--row-bd);
         }
         .amort-table th:first-child, .amort-table td:first-child {
             text-align: center;
@@ -522,7 +606,7 @@
             display: flex;
         }
         .modal-content {
-            background: #fff;
+            background: var(--bg);
             border-radius: 8px;
             max-width: 600px;
             width: 90%;
@@ -532,7 +616,7 @@
         }
         .modal-header {
             padding: 16px 20px;
-            border-bottom: 1px solid #e1e4e8;
+            border-bottom: 1px solid var(--bd);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -545,12 +629,12 @@
             border: none;
             font-size: 1.5em;
             cursor: pointer;
-            color: #586069;
+            color: var(--tx2);
             padding: 0;
             line-height: 1;
         }
         .modal-close:hover {
-            color: #24292e;
+            color: var(--tx);
         }
         .modal-body {
             padding: 20px;
@@ -560,7 +644,7 @@
         .modal-body p {
             margin-top: 0;
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
         }
         .modal-body textarea {
             width: 100%;
@@ -568,13 +652,15 @@
             font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
             font-size: 12px;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
+            background: var(--bg);
+            color: var(--tx);
             border-radius: 4px;
             box-sizing: border-box;
         }
         .modal-footer {
             padding: 12px 20px;
-            border-top: 1px solid #e1e4e8;
+            border-top: 1px solid var(--bd);
             text-align: right;
         }
         .modal-footer button {
@@ -582,12 +668,12 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.9em;
-            background: #f6f8fa;
-            border: 1px solid #e1e4e8;
-            color: #24292e;
+            background: var(--bg2);
+            border: 1px solid var(--bd);
+            color: var(--tx);
         }
         .modal-footer button:hover {
-            background: #e1e4e8;
+            background: var(--bg3);
         }
 
         /* Info icon / tooltip */
@@ -598,8 +684,8 @@
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background: #e1e4e8;
-            color: #586069;
+            background: var(--bg3);
+            color: var(--tx2);
             font-size: 11px;
             font-weight: bold;
             cursor: help;
@@ -615,7 +701,7 @@
             bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
-            background: #24292e;
+            background: var(--tx);
             color: #fff;
             padding: 10px 12px;
             border-radius: 6px;
@@ -634,14 +720,14 @@
             left: 50%;
             transform: translateX(-50%);
             border: 6px solid transparent;
-            border-top-color: #24292e;
+            border-top-color: var(--tx);
         }
 
         /* Citations */
         .citations {
             margin-top: 40px;
             padding: 20px;
-            background: #f6f8fa;
+            background: var(--bg2);
             border-radius: 6px;
             font-size: 0.9em;
             line-height: 1.7;
@@ -649,17 +735,18 @@
         .citations h3 {
             margin-top: 0;
             font-size: 1.1em;
-            color: #24292e;
-            border-bottom: 1px solid #e1e4e8;
+            color: var(--tx);
+            border-bottom: 1px solid var(--bd);
             padding-bottom: 10px;
         }
         .citation-item {
             margin: 10px 0;
             padding-left: 20px;
-            color: #586069;
+            color: var(--tx2);
         }
         .citation-item a {
-            color: #0366d6;
+            color: var(--accent);
+            text-decoration: none;
             text-decoration: none;
         }
         .citation-item a:hover {
@@ -668,20 +755,20 @@
         .disclaimer {
             margin-top: 15px;
             padding-top: 12px;
-            border-top: 1px solid #e1e4e8;
+            border-top: 1px solid var(--bd);
             font-size: 0.85em;
-            color: #586069;
+            color: var(--tx2);
         }
 
         footer {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--bd2);
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
         }
         footer a {
-            color: #0366d6;
+            color: var(--accent);
         }
 
         @media (max-width: 600px) {
@@ -722,6 +809,7 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"></button>
     <h1>Mortgage Comparison Calculator</h1>
 
     <div class="intro">
@@ -2151,6 +2239,25 @@
         }
 
         init();
+    </script>
+    <script>
+    (function(){
+        function isDark(){
+            var t=document.documentElement.getAttribute('data-theme');
+            if(t==='dark') return true;
+            if(t==='light') return false;
+            return matchMedia('(prefers-color-scheme:dark)').matches;
+        }
+        var btn=document.getElementById('themeToggle');
+        function updateIcon(){btn.textContent=isDark()?'\u2600':'\u263E';}
+        updateIcon();
+        btn.addEventListener('click',function(){
+            var next=isDark()?'light':'dark';
+            document.documentElement.setAttribute('data-theme',next);
+            localStorage.setItem('lo-theme',next);
+            updateIcon();
+        });
+    })();
     </script>
 </body>
 </html>

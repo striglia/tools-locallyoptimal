@@ -4,17 +4,108 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>529 College Savings Projector - Locally Optimal Tools</title>
+    <script>(function(){var t=localStorage.getItem('lo-theme');if(t)document.documentElement.setAttribute('data-theme',t)})()</script>
     <style>
+        :root {
+            --bg: #ffffff;
+            --bg2: #f6f8fa;
+            --bg3: #e1e4e8;
+            --tx: #333;
+            --tx2: #586069;
+            --tx3: #6a737d;
+            --bd: #d1d5da;
+            --bd2: #eee;
+            --accent: #0366d6;
+            --accent-hover: #0256c7;
+            --danger: #d73a49;
+            --danger-bg: #ffeef0;
+            --success: #28a745;
+            --success-bg: #dcffe4;
+            --warn: #f0ad4e;
+            --warn-dark: #856404;
+            --warn-bg: #fff3cd;
+            --warn-bd: #ffc107;
+            --purple: #6f42c1;
+            --muted: #959da5;
+        }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --success: #3fb950;
+            --success-bg: #0d2117;
+            --warn: #d29922;
+            --warn-dark: #d29922;
+            --warn-bg: #2a2000;
+            --warn-bd: #9e6a03;
+            --purple: #bc8cff;
+            --muted: #6e7681;
+        }}
+        :root[data-theme="dark"] {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --success: #3fb950;
+            --success-bg: #0d2117;
+            --warn: #d29922;
+            --warn-dark: #d29922;
+            --warn-bg: #2a2000;
+            --warn-bd: #9e6a03;
+            --purple: #bc8cff;
+            --muted: #6e7681;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--bd);
+            background: var(--bg2);
+            color: var(--tx2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+            z-index: 100;
+            padding: 0;
+        }
+        .theme-toggle:hover {
+            background: var(--bg3);
+            color: var(--tx);
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             line-height: 1.6;
-            color: #333;
+            color: var(--tx);
+            background: var(--bg);
         }
         h1 {
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--bd2);
             padding-bottom: 10px;
         }
         h2 {
@@ -35,26 +126,28 @@
             display: block;
             font-weight: 500;
             margin-bottom: 5px;
-            color: #24292e;
+            color: var(--tx);
         }
         .input-group input {
             width: 100%;
             max-width: 400px;
             padding: 8px 12px;
             font-size: 14px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
             border-radius: 4px;
             box-sizing: border-box;
+            background: var(--bg);
+            color: var(--tx);
         }
         .input-group input:focus {
             outline: none;
-            border-color: #0366d6;
+            border-color: var(--accent);
         }
         .controls {
             margin: 20px 0;
         }
         button {
-            background: #0366d6;
+            background: var(--accent);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -64,11 +157,11 @@
             margin-right: 10px;
         }
         button:hover {
-            background: #0256c7;
+            background: var(--accent-hover);
         }
         .error {
-            color: #d73a49;
-            background: #ffeef0;
+            color: var(--danger);
+            background: var(--danger-bg);
             padding: 12px;
             border-radius: 4px;
             margin: 15px 0;
@@ -77,10 +170,10 @@
         #results {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 2px solid #eee;
+            border-top: 2px solid var(--bd2);
         }
         .projection {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 20px;
             border-radius: 6px;
             margin: 20px 0;
@@ -88,14 +181,14 @@
         }
         .projection h3 {
             margin-top: 0;
-            color: #586069;
+            color: var(--tx2);
             font-size: 1em;
             font-weight: normal;
         }
         .amount {
             font-size: 2.5em;
             font-weight: bold;
-            color: #0366d6;
+            color: var(--accent);
             margin: 10px 0;
         }
         .comparisons {
@@ -107,27 +200,27 @@
             justify-content: space-between;
             padding: 15px;
             margin: 10px 0;
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
             border-radius: 6px;
-            background: white;
+            background: var(--bg);
         }
         .college-type {
             font-weight: 500;
             flex: 2;
         }
         .college-type small {
-            color: #6a737d;
+            color: var(--tx3);
             font-weight: normal;
             font-size: 0.85em;
         }
         .college-type sup {
-            color: #0366d6;
+            color: var(--accent);
             font-weight: bold;
         }
         .target-amount {
             flex: 1;
             text-align: right;
-            color: #586069;
+            color: var(--tx2);
             font-size: 0.95em;
         }
         .status {
@@ -136,33 +229,33 @@
             font-weight: 500;
         }
         .status.on-track {
-            color: #f0ad4e;
+            color: var(--warn);
         }
         .status.shortfall {
-            color: #dc3545;
+            color: var(--danger);
         }
         .status.ahead {
-            color: #28a745;
+            color: var(--success);
         }
         .recommendations {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
+            background: var(--warn-bg);
+            border: 1px solid var(--warn-bd);
             padding: 15px;
             border-radius: 6px;
             margin: 20px 0;
         }
         .recommendations h3 {
             margin-top: 0;
-            color: #856404;
+            color: var(--warn-dark);
         }
         .recommendation-item {
             margin: 10px 0;
-            color: #856404;
+            color: var(--warn-dark);
         }
         .citations {
             margin-top: 50px;
             padding: 25px;
-            background: #f6f8fa;
+            background: var(--bg2);
             border-radius: 6px;
             font-size: 0.9em;
             line-height: 1.7;
@@ -170,25 +263,25 @@
         .citations h3 {
             margin-top: 0;
             font-size: 1.1em;
-            color: #24292e;
-            border-bottom: 1px solid #e1e4e8;
+            color: var(--tx);
+            border-bottom: 1px solid var(--bd);
             padding-bottom: 10px;
         }
         .citations p {
             margin: 15px 0;
-            color: #24292e;
+            color: var(--tx);
         }
         .citation-item {
             margin: 12px 0;
             padding-left: 20px;
-            color: #586069;
+            color: var(--tx2);
         }
         .citation-item sup {
             font-weight: bold;
-            color: #0366d6;
+            color: var(--accent);
         }
         .citation-item a {
-            color: #0366d6;
+            color: var(--accent);
             text-decoration: none;
         }
         .citation-item a:hover {
@@ -197,15 +290,15 @@
         .disclaimer {
             margin-top: 20px;
             padding-top: 15px;
-            border-top: 1px solid #e1e4e8;
+            border-top: 1px solid var(--bd);
             font-size: 0.85em;
-            color: #586069;
+            color: var(--tx2);
         }
         .tax-chart {
             margin: 20px 0;
             padding: 20px;
-            background: white;
-            border: 1px solid #e1e4e8;
+            background: var(--bg);
+            border: 1px solid var(--bd);
             border-radius: 6px;
         }
         .tax-chart h4 {
@@ -227,7 +320,7 @@
         }
         .y-label {
             font-size: 11px;
-            color: #586069;
+            color: var(--tx2);
             text-align: right;
             line-height: 1;
         }
@@ -239,8 +332,8 @@
             align-items: flex-end;
             height: 200px;
             padding: 10px 0;
-            border-bottom: 2px solid #333;
-            border-left: 2px solid #333;
+            border-bottom: 2px solid var(--tx);
+            border-left: 2px solid var(--tx);
         }
         .reference-line {
             position: absolute;
@@ -250,13 +343,13 @@
             pointer-events: none;
         }
         .reference-line.uc {
-            border-color: #0366d6;
+            border-color: var(--accent);
         }
         .reference-line.outofstate {
-            border-color: #6f42c1;
+            border-color: var(--purple);
         }
         .reference-line.private {
-            border-color: #d73a49;
+            border-color: var(--danger);
         }
         .reference-label {
             position: absolute;
@@ -266,16 +359,16 @@
             font-weight: 500;
             padding: 2px 6px;
             border-radius: 3px;
-            background: white;
+            background: var(--bg);
         }
         .reference-label.uc {
-            color: #0366d6;
+            color: var(--accent);
         }
         .reference-label.outofstate {
-            color: #6f42c1;
+            color: var(--purple);
         }
         .reference-label.private {
-            color: #d73a49;
+            color: var(--danger);
         }
         .year-group {
             flex: 1;
@@ -299,10 +392,10 @@
             cursor: pointer;
         }
         .bar.taxable {
-            background: #959da5;
+            background: var(--muted);
         }
         .bar.tax-free {
-            background: #28a745;
+            background: var(--success);
         }
         .bar:hover::after {
             content: attr(data-value);
@@ -310,7 +403,7 @@
             bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
-            background: #24292e;
+            background: var(--tx);
             color: white;
             padding: 4px 8px;
             border-radius: 3px;
@@ -339,23 +432,23 @@
             text-align: center;
             margin-top: 15px;
             padding: 12px;
-            background: #f6f8fa;
+            background: var(--bg2);
             border-radius: 4px;
-            color: #28a745;
+            color: var(--success);
             font-weight: 500;
         }
         footer {
             margin-top: 30px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--bd2);
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
         }
         footer a {
-            color: #0366d6;
+            color: var(--accent);
         }
         sup {
-            color: #0366d6;
+            color: var(--accent);
             font-weight: bold;
         }
         @media (max-width: 600px) {
@@ -377,6 +470,7 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"></button>
     <h1>529 College Savings Projector</h1>
     <p>Calculate if your college savings are on track. Enter your current savings and contributions to see projected balance at college age.</p>
 
@@ -852,6 +946,25 @@
                 }
             });
         });
+    </script>
+    <script>
+    (function(){
+        function isDark(){
+            var t=document.documentElement.getAttribute('data-theme');
+            if(t==='dark') return true;
+            if(t==='light') return false;
+            return matchMedia('(prefers-color-scheme:dark)').matches;
+        }
+        var btn=document.getElementById('themeToggle');
+        function updateIcon(){btn.textContent=isDark()?'\u2600':'\u263E';}
+        updateIcon();
+        btn.addEventListener('click',function(){
+            var next=isDark()?'light':'dark';
+            document.documentElement.setAttribute('data-theme',next);
+            localStorage.setItem('lo-theme',next);
+            updateIcon();
+        });
+    })();
     </script>
 </body>
 </html>

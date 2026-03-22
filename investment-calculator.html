@@ -4,17 +4,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Investment Growth Calculator - Locally Optimal Tools</title>
+    <script>(function(){var t=localStorage.getItem('lo-theme');if(t)document.documentElement.setAttribute('data-theme',t)})()</script>
     <style>
+        :root {
+            --bg: #ffffff;
+            --bg2: #f6f8fa;
+            --bg3: #e1e4e8;
+            --tx: #333;
+            --tx2: #586069;
+            --tx3: #6a737d;
+            --bd: #d1d5da;
+            --bd2: #eee;
+            --accent: #0366d6;
+            --accent-hover: #0256c7;
+            --danger: #c53030;
+            --danger-bg: #fff5f5;
+            --danger-bd: #fed7d7;
+            --success: #276749;
+            --success-bg: #f0fff4;
+            --success-bd: #9ae6b4;
+        }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --danger-bd: #6e2d2d;
+            --success: #3fb950;
+            --success-bg: #0d2117;
+            --success-bd: #1a4731;
+        }}
+        :root[data-theme="dark"] {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --danger-bd: #6e2d2d;
+            --success: #3fb950;
+            --success-bg: #0d2117;
+            --success-bd: #1a4731;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--bd);
+            background: var(--bg2);
+            color: var(--tx2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+            z-index: 100;
+            padding: 0;
+        }
+        .theme-toggle:hover {
+            background: var(--bg3);
+            color: var(--tx);
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             line-height: 1.6;
-            color: #333;
+            color: var(--tx);
+            background: var(--bg);
         }
         h1 {
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--bd2);
             padding-bottom: 10px;
         }
         h2 {
@@ -22,12 +101,12 @@
             font-size: 1.3em;
         }
         .intro {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 15px 20px;
             border-radius: 6px;
             margin-bottom: 25px;
             font-size: 0.95em;
-            color: #24292e;
+            color: var(--tx);
         }
         .intro p {
             margin: 8px 0;
@@ -49,23 +128,25 @@
             display: block;
             font-weight: 500;
             margin-bottom: 5px;
-            color: #24292e;
+            color: var(--tx);
             font-size: 0.95em;
         }
         .input-group input {
             width: 100%;
             padding: 8px 12px;
             font-size: 14px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
+            background: var(--bg);
+            color: var(--tx);
             border-radius: 4px;
             box-sizing: border-box;
         }
         .input-group input:focus {
             outline: none;
-            border-color: #0366d6;
+            border-color: var(--accent);
         }
         .input-group small {
-            color: #6a737d;
+            color: var(--tx3);
             font-size: 0.85em;
             display: block;
             margin-top: 4px;
@@ -74,8 +155,8 @@
             margin-top: 30px;
         }
         .chart-container {
-            background: #fff;
-            border: 1px solid #e1e4e8;
+            background: var(--bg);
+            border: 1px solid var(--bd);
             border-radius: 6px;
             padding: 20px;
             margin: 20px 0;
@@ -91,38 +172,38 @@
             margin: 20px 0;
         }
         .summary-card {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 15px 20px;
             border-radius: 6px;
             text-align: center;
         }
         .summary-card.highlight {
-            background: #fff5f5;
-            border: 1px solid #fed7d7;
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-bd);
         }
         .summary-card.positive {
-            background: #f0fff4;
-            border: 1px solid #9ae6b4;
+            background: var(--success-bg);
+            border: 1px solid var(--success-bd);
         }
         .summary-label {
             font-size: 0.85em;
-            color: #586069;
+            color: var(--tx2);
             margin-bottom: 5px;
         }
         .summary-value {
             font-size: 1.8em;
             font-weight: bold;
-            color: #24292e;
+            color: var(--tx);
         }
         .summary-card.highlight .summary-value {
-            color: #c53030;
+            color: var(--danger);
         }
         .summary-card.positive .summary-value {
-            color: #276749;
+            color: var(--success);
         }
         .summary-sublabel {
             font-size: 0.8em;
-            color: #6a737d;
+            color: var(--tx3);
             margin-top: 3px;
         }
         .legend {
@@ -146,7 +227,7 @@
         .monte-carlo-section {
             margin-top: 30px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--bd2);
         }
         .info-icon {
             display: inline-flex;
@@ -155,8 +236,8 @@
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background: #e1e4e8;
-            color: #586069;
+            background: var(--bg3);
+            color: var(--tx2);
             font-size: 11px;
             font-weight: bold;
             cursor: help;
@@ -172,8 +253,8 @@
             bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
-            background: #24292e;
-            color: #fff;
+            background: var(--tx);
+            color: var(--bg);
             padding: 10px 12px;
             border-radius: 6px;
             font-size: 12px;
@@ -191,13 +272,13 @@
             left: 50%;
             transform: translateX(-50%);
             border: 6px solid transparent;
-            border-top-color: #24292e;
+            border-top-color: var(--tx);
         }
         .tooltip a {
             color: #79b8ff;
         }
         .monte-carlo-controls {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 15px 20px;
             border-radius: 6px;
             margin-bottom: 20px;
@@ -213,11 +294,11 @@
         .percentile-table th, .percentile-table td {
             padding: 10px 15px;
             text-align: left;
-            border-bottom: 1px solid #e1e4e8;
+            border-bottom: 1px solid var(--bd);
         }
         .percentile-table th {
             font-weight: 600;
-            color: #24292e;
+            color: var(--tx);
             font-size: 0.9em;
         }
         .percentile-table td {
@@ -227,7 +308,7 @@
             border-bottom: none;
         }
         .percentile-label {
-            color: #586069;
+            color: var(--tx2);
         }
         .percentile-value {
             font-weight: 600;
@@ -236,12 +317,12 @@
         footer {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--bd2);
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
         }
         footer a {
-            color: #0366d6;
+            color: var(--accent);
         }
         @media (max-width: 600px) {
             body {
@@ -269,6 +350,7 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"></button>
     <h1>Investment Growth Calculator</h1>
 
     <div class="intro">
@@ -786,6 +868,25 @@
 
         // Initialize
         calculate();
+    </script>
+    <script>
+    (function(){
+        function isDark(){
+            var t=document.documentElement.getAttribute('data-theme');
+            if(t==='dark') return true;
+            if(t==='light') return false;
+            return matchMedia('(prefers-color-scheme:dark)').matches;
+        }
+        var btn=document.getElementById('themeToggle');
+        function updateIcon(){btn.textContent=isDark()?'\u2600':'\u263E';}
+        updateIcon();
+        btn.addEventListener('click',function(){
+            var next=isDark()?'light':'dark';
+            document.documentElement.setAttribute('data-theme',next);
+            localStorage.setItem('lo-theme',next);
+            updateIcon();
+        });
+    })();
     </script>
 </body>
 </html>

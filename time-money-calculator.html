@@ -4,17 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time-Money Trade-Off Calculator - Locally Optimal Tools</title>
+    <script>(function(){var t=localStorage.getItem('lo-theme');if(t)document.documentElement.setAttribute('data-theme',t)})()</script>
     <style>
+        :root {
+            --bg: #ffffff;
+            --bg2: #f6f8fa;
+            --bg3: #e1e4e8;
+            --tx: #333;
+            --tx2: #586069;
+            --tx3: #6a737d;
+            --bd: #d1d5da;
+            --bd2: #eee;
+            --accent: #0366d6;
+            --accent-hover: #0256c7;
+            --danger: #d73a49;
+            --danger-bg: #ffeef0;
+            --success: #28a745;
+            --success-tx: #155724;
+            --success-bg: rgba(40, 167, 69, 0.15);
+        }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --success: #3fb950;
+            --success-tx: #3fb950;
+            --success-bg: rgba(63, 185, 80, 0.15);
+        }}
+        :root[data-theme="dark"] {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --tx: #c9d1d9;
+            --tx2: #8b949e;
+            --tx3: #6e7681;
+            --bd: #30363d;
+            --bd2: #21262d;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --danger: #f85149;
+            --danger-bg: #3d1117;
+            --success: #3fb950;
+            --success-tx: #3fb950;
+            --success-bg: rgba(63, 185, 80, 0.15);
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--bd);
+            background: var(--bg2);
+            color: var(--tx2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+            z-index: 100;
+            padding: 0;
+        }
+        .theme-toggle:hover {
+            background: var(--bg3);
+            color: var(--tx);
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             line-height: 1.6;
-            color: #333;
+            color: var(--tx);
+            background: var(--bg);
         }
         h1 {
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--bd2);
             padding-bottom: 10px;
         }
         h2 {
@@ -22,12 +98,12 @@
             font-size: 1.4em;
         }
         .intro {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 15px 20px;
             border-radius: 6px;
             margin-bottom: 25px;
             font-size: 0.95em;
-            color: #24292e;
+            color: var(--tx);
         }
         .intro p {
             margin: 8px 0;
@@ -58,28 +134,30 @@
             display: block;
             font-weight: 500;
             margin-bottom: 5px;
-            color: #24292e;
+            color: var(--tx);
             font-size: 0.95em;
         }
         .input-group input, .input-group select {
             width: 100%;
             padding: 8px 12px;
             font-size: 14px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
             border-radius: 4px;
             box-sizing: border-box;
+            background: var(--bg);
+            color: var(--tx);
         }
         .input-group input:focus, .input-group select:focus {
             outline: none;
-            border-color: #0366d6;
+            border-color: var(--accent);
         }
         .input-group input:invalid,
         .input-group input.invalid {
-            border-color: #d73a49;
-            background-color: #ffeef0;
+            border-color: var(--danger);
+            background-color: var(--danger-bg);
         }
         .input-group small {
-            color: #6a737d;
+            color: var(--tx3);
             font-size: 0.85em;
             display: block;
             margin-top: 4px;
@@ -87,10 +165,10 @@
         #results {
             margin-top: 30px;
             padding-top: 20px;
-            border-top: 2px solid #eee;
+            border-top: 2px solid var(--bd2);
         }
         .hourly-rate-display {
-            background: #f6f8fa;
+            background: var(--bg2);
             padding: 20px;
             border-radius: 6px;
             margin: 20px 0;
@@ -108,17 +186,17 @@
         }
         .rate-label {
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
             margin-bottom: 5px;
         }
         .rate-value {
             font-size: 2em;
             font-weight: bold;
-            color: #0366d6;
+            color: var(--accent);
         }
         .rate-sublabel {
             font-size: 0.8em;
-            color: #6a737d;
+            color: var(--tx3);
             margin-top: 3px;
         }
         .task-table {
@@ -129,14 +207,14 @@
         .task-table th {
             text-align: left;
             padding: 12px 10px;
-            border-bottom: 2px solid #e1e4e8;
+            border-bottom: 2px solid var(--bd);
             font-weight: 600;
-            color: #24292e;
+            color: var(--tx);
             font-size: 0.9em;
         }
         .task-table td {
             padding: 12px 10px;
-            border-bottom: 1px solid #e1e4e8;
+            border-bottom: 1px solid var(--bd);
         }
         .task-table tr:last-child td {
             border-bottom: none;
@@ -145,7 +223,7 @@
             font-weight: 500;
         }
         .task-table .task-time {
-            color: #6a737d;
+            color: var(--tx3);
             font-size: 0.9em;
         }
         .task-table .your-cost, .task-table .outsource-cost, .task-table .percent-value {
@@ -156,22 +234,22 @@
             font-size: 0.9em;
         }
         .task-table tr.worth-outsourcing {
-            background: rgba(40, 167, 69, 0.15);
+            background: var(--success-bg);
         }
         .task-table tr.worth-outsourcing td {
-            color: #155724;
+            color: var(--success-tx);
         }
         .task-table tr.worth-outsourcing .percent-value {
-            color: #28a745;
+            color: var(--success);
             font-weight: 600;
         }
         .task-table tr:not(.worth-outsourcing) .percent-value {
-            color: #6a737d;
+            color: var(--tx3);
         }
         .task-category {
-            background: #f6f8fa;
+            background: var(--bg2);
             font-weight: 600;
-            color: #24292e;
+            color: var(--tx);
         }
         .task-category td {
             padding: 10px;
@@ -179,16 +257,16 @@
         }
         .assumptions-toggle {
             background: none;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
-            color: #586069;
+            color: var(--tx2);
             margin-top: 20px;
         }
         .assumptions-toggle:hover {
-            background: #f6f8fa;
+            background: var(--bg2);
         }
         .assumptions-panel {
             display: none;
@@ -203,11 +281,11 @@
         .assumptions-panel h3 {
             margin-top: 0;
             font-size: 1em;
-            color: #24292e;
+            color: var(--tx);
         }
         .assumptions-disclaimer {
             font-size: 0.85em;
-            color: #6a737d;
+            color: var(--tx3);
             margin-bottom: 15px;
             font-style: italic;
         }
@@ -219,9 +297,9 @@
         .assumption-item {
             font-size: 0.9em;
             padding: 10px;
-            background: white;
+            background: var(--bg);
             border-radius: 4px;
-            border: 1px solid #e1e4e8;
+            border: 1px solid var(--bd);
         }
         .assumption-header {
             display: flex;
@@ -242,24 +320,26 @@
         .assumption-item input {
             width: 55px;
             padding: 4px 6px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--bd);
+            background: var(--bg);
+            color: var(--tx);
             border-radius: 3px;
             font-size: 0.85em;
         }
         .assumption-source {
             font-size: 0.8em;
-            color: #6a737d;
+            color: var(--tx3);
             font-style: italic;
         }
         footer {
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--bd2);
             font-size: 0.9em;
-            color: #586069;
+            color: var(--tx2);
         }
         footer a {
-            color: #0366d6;
+            color: var(--accent);
         }
         @media (max-width: 600px) {
             body {
@@ -299,6 +379,7 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" title="Toggle light/dark mode"></button>
     <h1>Time-Money Trade-Off Calculator</h1>
 
     <div class="intro">
@@ -363,7 +444,7 @@
         </div>
 
         <h2>Task Comparison</h2>
-        <p style="color: #586069; font-size: 0.9em;">"Your Time Cost" = your hourly value &times; task hours. Green = outsourcing costs &lt;<span id="thresholdDisplay">80</span>% of your time cost.</p>
+        <p style="color: var(--tx2); font-size: 0.9em;">"Your Time Cost" = your hourly value &times; task hours. Green = outsourcing costs &lt;<span id="thresholdDisplay">80</span>% of your time cost.</p>
 
         <button type="button" class="assumptions-toggle" id="assumptionsToggle">Edit Assumptions</button>
 
@@ -633,6 +714,25 @@
         // Initialize
         buildAssumptionsPanel();
         calculate();
+    </script>
+    <script>
+    (function(){
+        function isDark(){
+            var t=document.documentElement.getAttribute('data-theme');
+            if(t==='dark') return true;
+            if(t==='light') return false;
+            return matchMedia('(prefers-color-scheme:dark)').matches;
+        }
+        var btn=document.getElementById('themeToggle');
+        function updateIcon(){btn.textContent=isDark()?'\u2600':'\u263E';}
+        updateIcon();
+        btn.addEventListener('click',function(){
+            var next=isDark()?'light':'dark';
+            document.documentElement.setAttribute('data-theme',next);
+            localStorage.setItem('lo-theme',next);
+            updateIcon();
+        });
+    })();
     </script>
 </body>
 </html>
